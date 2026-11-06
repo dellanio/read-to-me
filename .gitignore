@@ -14,4 +14,8 @@ captures/
 *.aab
 .kotlin/
 GEMINI.md
+*.jks
+*.keystore
+keystore.properties
+
 

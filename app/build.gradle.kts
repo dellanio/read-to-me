@@ -1,7 +1,16 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -18,9 +27,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                val storeFilePath = keystoreProperties.getProperty("storeFile")
+                if (!storeFilePath.isNullOrBlank()) {
+                    storeFile = rootProject.file(storeFilePath)
+                    storePassword = keystoreProperties.getProperty("storePassword")
+                    keyAlias = keystoreProperties.getProperty("keyAlias")
+                    keyPassword = keystoreProperties.getProperty("keyPassword")
+                }
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = false // Ativar true se desejar R8/ProGuard completo
+            if (keystorePropertiesFile.exists() && !keystoreProperties.getProperty("storeFile").isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
