@@ -1,0 +1,92 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- Sombra e Profundidade 3D da Tela -->
+    <path
+        android:pathData="M24,20 L66,10 C70,9 74,12 75,16 L84,66 C85,70 82,74 78,75 L36,85 C32,86 28,83 27,79 L18,29 C17,25 20,21 24,20 Z"
+        android:fillColor="#151E3D" />
+
+    <!-- Corpo da Tela do Smartphone em Perspectiva 3D -->
+    <path
+        android:pathData="M26,18 L68,8 C72,7 76,10 77,14 L86,64 C87,68 84,72 80,73 L38,83 C34,84 30,81 29,77 L20,27 C19,23 22,19 26,18 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="20"
+                android:startY="10"
+                android:endX="86"
+                android:endY="80"
+                android:type="linear">
+                <item android:color="#2563EB" android:offset="0.0" />
+                <item android:color="#1E1B4B" android:offset="0.6" />
+                <item android:color="#0F172A" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Borda Neon da Tela 3D -->
+    <path
+        android:pathData="M26,18 L68,8 C72,7 76,10 77,14 L86,64 C87,68 84,72 80,73 L38,83 C34,84 30,81 29,77 L20,27 C19,23 22,19 26,18 Z"
+        android:strokeWidth="2.5"
+        android:strokeColor="#38BDF8" />
+
+    <!-- Linhas de Onda de Áudio dentro da Tela 3D -->
+    <path
+        android:pathData="M35,32 L40,31 M45,29 L50,28 M55,27 L60,26 M37,42 L47,40 M52,39 L65,36 M40,52 L55,49 M60,48 L70,46"
+        android:strokeWidth="2"
+        android:strokeColor="#60A5FA"
+        android:strokeLineCap="round" />
+
+    <!-- Sombra do Microfone 3D Flutuante -->
+    <path
+        android:pathData="M48,60 C42,60 38,64 38,68 C38,72 42,75 48,75 C54,75 58,72 58,68 C58,64 54,60 48,60 Z"
+        android:fillColor="#33000000" />
+
+    <!-- Base e Suporte do Microfone -->
+    <path
+        android:pathData="M38,76 L58,76 M48,68 L48,76"
+        android:strokeWidth="3.5"
+        android:strokeColor="#E2E8F0"
+        android:strokeLineCap="round" />
+
+    <!-- Arco U do Suporte do Microfone -->
+    <path
+        android:pathData="M36,50 C36,59 41,65 48,65 C55,65 60,59 60,50"
+        android:strokeWidth="3.5"
+        android:strokeColor="#F8FAFC"
+        android:strokeLineCap="round" />
+
+    <!-- Cápsula do Microfone (Gradiente Vibrante Cyan-Violeta) -->
+    <path
+        android:pathData="M42,36 C42,32.7 44.7,30 48,30 C51.3,30 54,32.7 54,36 L54,50 C54,53.3 51.3,56 48,56 C44.7,56 42,53.3 42,50 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="42"
+                android:startY="30"
+                android:endX="54"
+                android:endY="56"
+                android:type="linear">
+                <item android:color="#38BDF8" android:offset="0.0" />
+                <item android:color="#818CF8" android:offset="0.5" />
+                <item android:color="#C084FC" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Grade metálica do Microfone -->
+    <path
+        android:pathData="M43,42 L53,42 M43,46 L53,46 M48,30 L48,56"
+        android:strokeWidth="1.2"
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.7" />
+
+    <!-- Brilho de Luz no Microfone -->
+    <path
+        android:pathData="M44,34 C44,33 45,32 46,32 L46,48 C45,48 44,47 44,46 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5" />
+
+</vector>

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ReadToMe</string>
+    <string name="accessibility_service_description">Permite ao ReadToMe ler textos selecionados na tela sob demanda usando síntese de voz e OCR.</string>
+</resources>
