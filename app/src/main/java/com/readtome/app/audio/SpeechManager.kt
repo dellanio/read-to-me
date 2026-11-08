@@ -14,9 +14,10 @@ import kotlinx.coroutines.launch
 
 /**
  * Gerenciador unificado de síntese de voz com Cascata Inteligente de Fallback:
- * 1. ElevenLabs (Principal: Ultra-realismo de estúdio)
- * 2. MiniMax (Fallback: Vozes naturais em Português quando acabar créditos da ElevenLabs)
- * 3. Android Nativo (Fallback Final: 100% offline e ilimitado para garantir que a fala nunca pare)
+ * 1. ReadToMe Neural Offline (Principal: Ultra-rápido, privacidade total e sem consumo de dados)
+ * 2. ElevenLabs (Fallback Nuvem: Ultra-realismo de estúdio com IA generativa)
+ * 3. MiniMax (Fallback Alternativo Nuvem)
+ * 4. Android Nativo (Fallback Final: 100% offline para garantir que a fala nunca pare)
  */
 class SpeechManager(
     private val context: Context,
@@ -73,42 +74,56 @@ class SpeechManager(
             }
         }
 
-        // Configuração da Cascata de Fallback: ElevenLabs -> Kokoro Offline -> MiniMax -> Nativo
-        elevenLabsEngine.onQuotaExceeded = { remainingText, speed ->
-            Log.w(TAG, "ElevenLabs sem créditos/cota. Ativando fallback...")
+        // Fallback do ReadToMe Neural (Kokoro Offline) -> ElevenLabs -> MiniMax -> Nativo
+        kokoroEngine.onErrorFallback = { remainingText, speed ->
+            Log.w(TAG, "ReadToMe Neural Offline falhou ou modelo ausente. Ativando fallback...")
+            val fallbackEngine = if (preferences.voiceEngine == VoiceEngineType.AUTO_CASCADE) {
+                if (preferences.elevenLabsApiKey.isNotBlank()) {
+                    elevenLabsEngine
+                } else if (preferences.minimaxApiKey.isNotBlank()) {
+                    miniMaxEngine
+                } else {
+                    nativeEngine
+                }
+            } else {
+                nativeEngine
+            }
+
             scope.launch(Dispatchers.Main) {
+                val label = when (fallbackEngine) {
+                    elevenLabsEngine -> "ElevenLabs (Nuvem)"
+                    miniMaxEngine -> "MiniMax"
+                    else -> "Android Nativo"
+                }
                 android.widget.Toast.makeText(
                     context,
-                    "ElevenLabs sem cota. Ativando voz neural offline...",
+                    "ReadToMe Neural indisponível. Alternando para $label.",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
-            if (kokoroEngine.isModelInstalled()) {
-                Log.i(TAG, "Fallback para ReadToMe Neural (Kokoro Offline)...")
-                activeEngine = kokoroEngine
-                kokoroEngine.speak(remainingText, speed)
-            } else if (preferences.minimaxApiKey.isNotBlank()) {
-                activeEngine = miniMaxEngine
-                miniMaxEngine.speak(remainingText, speed)
-            } else {
-                Log.w(TAG, "Ativando fallback para Android Nativo...")
-                activeEngine = nativeEngine
-                nativeEngine.speak(remainingText, speed)
-            }
+            activeEngine = fallbackEngine
+            fallbackEngine.speak(remainingText, speed)
         }
 
-        // Fallback do Kokoro Neural -> Nativo
-        kokoroEngine.onErrorFallback = { remainingText, speed ->
-            Log.w(TAG, "Kokoro Offline falhou ou modelo ausente. Ativando fallback para Android Nativo...")
+        // Fallback da ElevenLabs -> MiniMax -> Android Nativo
+        elevenLabsEngine.onQuotaExceeded = { remainingText, speed ->
+            Log.w(TAG, "ElevenLabs sem créditos/cota. Ativando fallback...")
+            val fallbackEngine = if (preferences.minimaxApiKey.isNotBlank()) {
+                miniMaxEngine
+            } else {
+                nativeEngine
+            }
+
             scope.launch(Dispatchers.Main) {
+                val label = if (fallbackEngine === miniMaxEngine) "MiniMax" else "Android Nativo offline"
                 android.widget.Toast.makeText(
                     context,
-                    "Alternando para voz Nativa offline.",
+                    "ElevenLabs sem cota. Alternando para $label...",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
-            activeEngine = nativeEngine
-            nativeEngine.speak(remainingText, speed)
+            activeEngine = fallbackEngine
+            fallbackEngine.speak(remainingText, speed)
         }
 
         // Fallback da MiniMax -> Android Nativo
@@ -117,7 +132,7 @@ class SpeechManager(
             scope.launch(Dispatchers.Main) {
                 android.widget.Toast.makeText(
                     context,
-                    "MiniMax sem saldo (cota 1008). Usando voz Nativa offline.",
+                    "MiniMax sem saldo. Usando voz Nativa offline.",
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
@@ -141,11 +156,11 @@ class SpeechManager(
     private fun determineInitialEngine(): TtsEngine {
         return when (preferences.voiceEngine) {
             VoiceEngineType.AUTO_CASCADE -> {
-                // Cascata inteligente: ElevenLabs primeiro se configurada, senão Kokoro Neural, senão MiniMax, senão Nativo
-                if (preferences.elevenLabsApiKey.isNotBlank()) {
-                    elevenLabsEngine
-                } else if (kokoroEngine.isModelInstalled()) {
+                // Cascata inteligente solicitada: ReadToMe Neural (Offline) ➔ ElevenLabs ➔ MiniMax ➔ Nativo
+                if (kokoroEngine.isModelInstalled()) {
                     kokoroEngine
+                } else if (preferences.elevenLabsApiKey.isNotBlank()) {
+                    elevenLabsEngine
                 } else if (preferences.minimaxApiKey.isNotBlank()) {
                     miniMaxEngine
                 } else {
@@ -174,6 +189,7 @@ class SpeechManager(
     }
 
     override fun stop() {
+        kokoroEngine.stop()
         nativeEngine.stop()
         elevenLabsEngine.stop()
         miniMaxEngine.stop()
@@ -181,12 +197,14 @@ class SpeechManager(
     }
 
     override fun setPlaybackSpeed(speed: Float) {
+        kokoroEngine.setPlaybackSpeed(speed)
         nativeEngine.setPlaybackSpeed(speed)
         elevenLabsEngine.setPlaybackSpeed(speed)
         miniMaxEngine.setPlaybackSpeed(speed)
     }
 
     override fun release() {
+        kokoroEngine.release()
         nativeEngine.release()
         elevenLabsEngine.release()
         miniMaxEngine.release()

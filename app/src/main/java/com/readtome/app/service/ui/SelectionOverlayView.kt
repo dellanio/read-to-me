@@ -52,6 +52,7 @@ class SelectionOverlayView(
     private var startY = 0f
     private var isDragging = false
     private var isCustomSelection = false
+    private var hasTriggered = false
 
     private val selectionRect = RectF()
 
@@ -275,20 +276,8 @@ class SelectionOverlayView(
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                // Checa cliques nos botões de ação
-                if (btnCloseRect.contains(x, y)) {
-                    onDismiss()
-                    return true
-                }
-                if (!btnResetRect.isEmpty && btnResetRect.contains(x, y)) {
-                    val margin = 16f
-                    selectionRect.set(margin, margin, width - margin, height - margin)
-                    isCustomSelection = false
-                    invalidate()
-                    return true
-                }
-                if (btnPlayRect.contains(x, y)) {
-                    triggerSelection()
+                // Checa toque nos botões de ação (consome o evento DOWN para receber o UP)
+                if (btnCloseRect.contains(x, y) || (!btnResetRect.isEmpty && btnResetRect.contains(x, y)) || btnPlayRect.contains(x, y)) {
                     return true
                 }
 
@@ -318,7 +307,7 @@ class SelectionOverlayView(
             }
 
             MotionEvent.ACTION_UP -> {
-                // Se foi um clique no botão de ação no UP
+                // Se foi um clique no botão de ação no UP (aciona apenas uma única vez)
                 if (btnCloseRect.contains(x, y)) {
                     onDismiss()
                     return true
@@ -350,8 +339,6 @@ class SelectionOverlayView(
                     return true
                 }
 
-                // Se deu um simples toque fora dos botões sem arrastar:
-                // Se ainda for a tela toda por padrão ou seleção válida, pode confirmar a leitura
                 return true
             }
         }
@@ -359,6 +346,9 @@ class SelectionOverlayView(
     }
 
     private fun triggerSelection() {
+        if (hasTriggered) return
+        hasTriggered = true
+
         val finalRect = Rect(
             selectionRect.left.toInt(),
             selectionRect.top.toInt(),

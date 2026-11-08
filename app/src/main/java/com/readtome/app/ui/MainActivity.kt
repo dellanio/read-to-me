@@ -700,14 +700,14 @@ fun ReadToMeStudioScreen() {
                             .clickable {
                                 selectedVoiceEngine = VoiceEngineType.AUTO_CASCADE
                                 prefs.voiceEngine = VoiceEngineType.AUTO_CASCADE
-                                Toast.makeText(context, "Cascata: ElevenLabs ➔ ReadToMe Neural ➔ Nativo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Cascata: ReadToMe Neural ➔ ElevenLabs ➔ Nativo", Toast.LENGTH_SHORT).show()
                             }
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "✨ Cascata IA: ElevenLabs ➔ ReadToMe Neural (Offline)",
+                                text = "✨ Cascata IA: ReadToMe Neural (Offline) ➔ ElevenLabs",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (selectedVoiceEngine == VoiceEngineType.AUTO_CASCADE) Color.White else Color(0xFFCBD5E1)
@@ -966,10 +966,10 @@ fun ReadToMeStudioScreen() {
                             onClick = {
                                 prefs.voiceEngine = VoiceEngineType.KOKORO
                                 selectedVoiceEngine = VoiceEngineType.KOKORO
-                                app.ttsEngine.speak(
-                                    "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho sem precisar de internet.",
-                                    currentSpeed
-                                )
+                                val testText = directInputText.trim().ifBlank {
+                                    "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho sem precisar de internet."
+                                }
+                                app.ttsEngine.speak(testText, currentSpeed)
                             },
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))

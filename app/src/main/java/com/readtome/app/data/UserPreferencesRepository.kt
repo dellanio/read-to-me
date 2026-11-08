@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 enum class VoiceEngineType {
-    AUTO_CASCADE, // ElevenLabs (Principal) -> Kokoro (Offline Neural) -> Nativo (Fallback Final)
+    AUTO_CASCADE, // ReadToMe Neural (Offline) -> ElevenLabs -> MiniMax -> Nativo (Fallback Final)
     ELEVEN_LABS,
     KOKORO,       // ReadToMe Neural (Kokoro-82M Offline)
     MINIMAX,

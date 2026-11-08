@@ -45,6 +45,7 @@ class ReadToMeAccessibilityService : AccessibilityService() {
     private lateinit var windowManager: WindowManager
     private var floatingBubbleView: FloatingBubbleView? = null
     private var selectionOverlayView: SelectionOverlayView? = null
+    private var isProcessingSelection = false
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val textRecognizer by lazy {
@@ -193,23 +194,39 @@ class ReadToMeAccessibilityService : AccessibilityService() {
     // =========================================================================
 
     private fun handleSelection(selectedRect: Rect) {
-        // Prioridade 1: Buscar nós nativos de texto dentro da área selecionada
-        val extractedNodeText = extractTextFromAccessibilityNodes(selectedRect)
-
-        if (extractedNodeText.isNotBlank()) {
-            Log.d(TAG, "Extração bem-sucedida via nós nativos: ${extractedNodeText.take(60)}...")
-            closeSelectionOverlay()
-            dispatchTextToPipeline(extractedNodeText)
+        if (isProcessingSelection) {
+            Log.w(TAG, "handleSelection já em andamento, ignorando evento duplicado.")
             return
         }
+        isProcessingSelection = true
 
-        // Prioridade 2: Fallback para Screenshot + OCR (API 30+)
-        Log.d(TAG, "Nenhum nó de texto encontrado. Acionando Fallback OCR...")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            captureScreenshotAndOcr(selectedRect)
-        } else {
-            Log.e(TAG, "Fallback de screenshot requer Android 11+ (API 30).")
+        try {
+            // Interrompe imediatamente qualquer áudio anterior para evitar sobreposição de vozes
+            ReadToMeApp.instance.ttsEngine.stop()
+
+            // Prioridade 1: Buscar nós nativos de texto dentro da área selecionada
+            val extractedNodeText = extractTextFromAccessibilityNodes(selectedRect)
+
+            if (extractedNodeText.isNotBlank()) {
+                Log.d(TAG, "Extração bem-sucedida via nós nativos: ${extractedNodeText.take(60)}...")
+                closeSelectionOverlay()
+                dispatchTextToPipeline(extractedNodeText)
+                return
+            }
+
+            // Prioridade 2: Fallback para Screenshot + OCR (API 30+)
+            Log.d(TAG, "Nenhum nó de texto encontrado. Acionando Fallback OCR...")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                captureScreenshotAndOcr(selectedRect)
+            } else {
+                Log.e(TAG, "Fallback de screenshot requer Android 11+ (API 30).")
+                closeSelectionOverlay()
+                isProcessingSelection = false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro durante handleSelection", e)
             closeSelectionOverlay()
+            isProcessingSelection = false
         }
     }
 
@@ -321,16 +338,21 @@ class ReadToMeAccessibilityService : AccessibilityService() {
         val prefs = app.preferences
 
         serviceScope.launch {
-            val textToRead = if (prefs.isAiCleaningEnabled && prefs.geminiApiKey.isNotBlank()) {
-                val cleanResult = GeminiTextProcessor.cleanOcrText(rawText, prefs.geminiApiKey)
-                cleanResult.getOrDefault(rawText)
-            } else {
-                rawText
-            }
+            try {
+                val textToRead = if (prefs.isAiCleaningEnabled && prefs.geminiApiKey.isNotBlank()) {
+                    val cleanResult = GeminiTextProcessor.cleanOcrText(rawText, prefs.geminiApiKey)
+                    cleanResult.getOrDefault(rawText)
+                } else {
+                    rawText
+                }
 
-            Log.i(TAG, "Iniciando síntese de voz para: ${textToRead.take(80)}...")
-            setupFloatingBubble()
-            app.ttsEngine.speak(textToRead, prefs.playbackSpeed)
+                Log.i(TAG, "Iniciando síntese de voz para: ${textToRead.take(80)}...")
+                setupFloatingBubble()
+                app.ttsEngine.stop()
+                app.ttsEngine.speak(textToRead, prefs.playbackSpeed)
+            } finally {
+                isProcessingSelection = false
+            }
         }
     }
 }
