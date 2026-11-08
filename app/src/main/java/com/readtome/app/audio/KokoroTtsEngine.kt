@@ -9,6 +9,8 @@ import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsKokoroModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsSupertonicModelConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import com.readtome.app.data.UserPreferencesRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,16 +37,25 @@ class KokoroTtsEngine(
     companion object {
         private const val TAG = "KokoroTts"
 
-        // IDs oficiais de falantes em Português do Brasil no Kokoro v1.0 / v1.1
-        const val SPEAKER_PF_DORA = 42   // Dora (Feminino BR)
-        const val SPEAKER_PM_ALEX = 43   // Alex (Masculino BR)
-        const val SPEAKER_PM_SANTA = 44  // Santa (Masculino BR)
+        // Vozes em Português do Brasil
+        const val SPEAKER_FABER_BR = 0   // Faber (Masculino BR - Piper VITS On-Device)
+        const val SPEAKER_PF_DORA = 42   // Dora (Feminino BR - Kokoro)
+        const val SPEAKER_PM_ALEX = 43   // Alex (Masculino BR - Kokoro)
+        const val SPEAKER_PM_SANTA = 44  // Santa (Masculino BR - Kokoro)
 
-        // Exemplos de falantes em Inglês
+        // Vozes em Inglês
         const val SPEAKER_AF_SARAH = 9   // Sarah (Feminino US)
         const val SPEAKER_AM_MICHAEL = 16 // Michael (Masculino US)
         const val SPEAKER_BM_GEORGE = 26 // George (Masculino UK)
     }
+
+    enum class EngineBackend {
+        SUPERTONIC,
+        PIPER_VITS,
+        KOKORO
+    }
+
+    private var activeBackend: EngineBackend? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var synthesisJob: Job? = null
@@ -83,9 +94,63 @@ class KokoroTtsEngine(
     )
 
     /**
+     * Localiza a pasta onde os arquivos do modelo Supertonic-3 (Português & Multilíngue) estão instalados.
+     */
+    fun getSupertonicModelDir(): File? {
+        val candidates = listOfNotNull(
+            File(context.filesDir, "supertonic"),
+            File(context.filesDir, "sherpa-onnx-supertonic-3-tts-int8-2026-05-11"),
+            context.getExternalFilesDir(null)?.resolve("supertonic"),
+            File("/sdcard/Android/data/${context.packageName}/files/supertonic")
+        )
+        val dir = candidates.firstOrNull { File(it, "duration_predictor.int8.onnx").exists() && File(it, "voice.bin").exists() }
+        Log.i(TAG, "getSupertonicModelDir() resolvido: ${dir?.absolutePath}")
+        return dir
+    }
+
+    /**
+     * Localiza a pasta onde os arquivos do modelo Piper VITS (pt-BR) estão instalados.
+     */
+    fun getPiperModelDir(): File? {
+        val candidates = listOfNotNull(
+            File(context.filesDir, "piper-pt_BR"),
+            File(context.filesDir, "piper"),
+            File(context.filesDir, "vits-piper-pt_BR-faber-medium"),
+            context.getExternalFilesDir(null)?.resolve("piper-pt_BR"),
+            context.getExternalFilesDir(null)?.resolve("piper"),
+            File("/sdcard/Android/data/${context.packageName}/files/piper-pt_BR"),
+            File("/sdcard/Android/data/${context.packageName}/files/piper")
+        )
+        val dir = candidates.firstOrNull { d ->
+            d.exists() && d.listFiles()?.any { it.name.endsWith(".onnx") && !it.name.contains("kokoro") } == true
+        }
+        Log.i(TAG, "getPiperModelDir() resolvido: ${dir?.absolutePath}")
+        return dir
+    }
+
+    /**
+     * Localiza a pasta espeak-ng-data necessária para fonetização dinâmica.
+     */
+    fun getEspeakDataDir(): File? {
+        val candidates = listOfNotNull(
+            File(context.filesDir, "piper-pt_BR/espeak-ng-data"),
+            File(context.filesDir, "kokoro/kokoro-int8-multi-lang-v1_1/espeak-ng-data"),
+            File(context.filesDir, "espeak-ng-data"),
+            context.getExternalFilesDir(null)?.resolve("piper-pt_BR/espeak-ng-data"),
+            context.getExternalFilesDir(null)?.resolve("kokoro/kokoro-int8-multi-lang-v1_1/espeak-ng-data"),
+            context.getExternalFilesDir(null)?.resolve("espeak-ng-data"),
+            File("/sdcard/Android/data/${context.packageName}/files/piper-pt_BR/espeak-ng-data"),
+            File("/sdcard/Android/data/${context.packageName}/files/kokoro/kokoro-int8-multi-lang-v1_1/espeak-ng-data")
+        )
+        val dir = candidates.firstOrNull { it.exists() && (File(it, "phondata").exists() || File(it, "pt_dict").exists()) }
+        Log.i(TAG, "getEspeakDataDir() resolvido: ${dir?.absolutePath}")
+        return dir
+    }
+
+    /**
      * Localiza a pasta onde os arquivos do modelo Kokoro estão instalados.
      */
-    fun getModelDir(): File? {
+    fun getKokoroModelDir(): File? {
         val candidates = listOfNotNull(
             File(context.filesDir, "kokoro/kokoro-int8-multi-lang-v1_1"),
             File(context.filesDir, "kokoro-model/kokoro-int8-multi-lang-v1_1"),
@@ -96,13 +161,20 @@ class KokoroTtsEngine(
             File("/sdcard/Android/data/${context.packageName}/files/kokoro")
         )
         val dir = candidates.firstOrNull { File(it, "model.int8.onnx").exists() }
-        Log.i(TAG, "getModelDir() resolvido: ${dir?.absolutePath}")
+        Log.i(TAG, "getKokoroModelDir() resolvido: ${dir?.absolutePath}")
         return dir
     }
 
+    fun getModelDir(): File? {
+        return getSupertonicModelDir() ?: getPiperModelDir() ?: getKokoroModelDir()
+    }
+
     fun isModelInstalled(): Boolean {
-        val installed = getModelDir() != null
-        Log.i(TAG, "isModelInstalled() = $installed")
+        val hasSupertonic = getSupertonicModelDir() != null
+        val hasPiper = getPiperModelDir() != null && getEspeakDataDir() != null
+        val hasKokoro = getKokoroModelDir() != null
+        val installed = hasSupertonic || hasPiper || hasKokoro
+        Log.i(TAG, "isModelInstalled() = $installed (Supertonic: $hasSupertonic, Piper: $hasPiper, Kokoro: $hasKokoro)")
         return installed
     }
 
@@ -110,50 +182,131 @@ class KokoroTtsEngine(
     private fun ensureTtsInitialized(): Boolean {
         if (tts != null) return true
 
-        val modelDir = getModelDir()
-        if (modelDir == null) {
-            Log.e(TAG, "Diretório do modelo Kokoro não encontrado.")
-            return false
+        // Prioridade 1: Supertonic-3 (Fonetização nativa end-to-end com unicode indexer para 31 idiomas incluindo Português)
+        val supertonicDir = getSupertonicModelDir()
+        if (supertonicDir != null) {
+            try {
+                Log.i(TAG, "Inicializando Sherpa-ONNX Supertonic-3 Neural TTS (Português & Multilíngue)...")
+                val supertonicConfig = OfflineTtsSupertonicModelConfig(
+                    durationPredictor = File(supertonicDir, "duration_predictor.int8.onnx").absolutePath,
+                    textEncoder = File(supertonicDir, "text_encoder.int8.onnx").absolutePath,
+                    vectorEstimator = File(supertonicDir, "vector_estimator.int8.onnx").absolutePath,
+                    vocoder = File(supertonicDir, "vocoder.int8.onnx").absolutePath,
+                    ttsJson = File(supertonicDir, "tts.json").absolutePath,
+                    unicodeIndexer = File(supertonicDir, "unicode_indexer.bin").absolutePath,
+                    voiceStyle = File(supertonicDir, "voice.bin").absolutePath
+                )
+
+                val modelConfig = OfflineTtsModelConfig(
+                    supertonic = supertonicConfig,
+                    numThreads = 4,
+                    debug = false,
+                    provider = "cpu"
+                )
+
+                val ttsConfig = OfflineTtsConfig(
+                    model = modelConfig,
+                    maxNumSentences = 1
+                )
+
+                tts = OfflineTts(assetManager = null, config = ttsConfig)
+                activeBackend = EngineBackend.SUPERTONIC
+                Log.i(TAG, "Sherpa-ONNX Supertonic-3 inicializado com sucesso! SampleRate: ${tts?.sampleRate()}, Falantes: ${tts?.numSpeakers()}")
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Falha ao instanciar Supertonic-3: ${e.message}", e)
+            }
         }
 
-        return try {
-            val modelFile = File(modelDir, "model.int8.onnx")
-            val voicesFile = File(modelDir, "voices.bin")
-            val tokensFile = File(modelDir, "tokens.txt")
-            val dataDir = File(modelDir, "espeak-ng-data")
-            val dictDir = File(modelDir, "dict")
-            val lexiconFile = File(modelDir, "lexicon-us-en.txt")
+        // Prioridade 2: Piper VITS
+        val piperDir = getPiperModelDir()
+        val espeakDir = getEspeakDataDir()
+        if (piperDir != null && espeakDir != null) {
+            try {
+                Log.i(TAG, "Inicializando Sherpa-ONNX Piper VITS (Português do Brasil)...")
+                val onnxFile = piperDir.listFiles()?.firstOrNull { it.name.endsWith(".onnx") && !it.name.contains("kokoro") }
+                    ?: File(piperDir, "pt_BR-faber-medium.onnx")
+                val tokensFile = piperDir.listFiles()?.firstOrNull { it.name == "tokens.txt" }
+                    ?: File(piperDir, "tokens.txt")
 
-            val kokoroConfig = OfflineTtsKokoroModelConfig(
-                model = modelFile.absolutePath,
-                voices = voicesFile.absolutePath,
-                tokens = tokensFile.absolutePath,
-                dataDir = dataDir.absolutePath,
-                dictDir = if (dictDir.exists()) dictDir.absolutePath else "",
-                lexicon = if (lexiconFile.exists()) lexiconFile.absolutePath else "",
-                lang = "pt-br",
-                lengthScale = 1.0f
-            )
+                val vitsConfig = OfflineTtsVitsModelConfig(
+                    model = onnxFile.absolutePath,
+                    tokens = tokensFile.absolutePath,
+                    dataDir = espeakDir.absolutePath,
+                    lexicon = "",
+                    dictDir = "",
+                    noiseScale = 0.667f,
+                    noiseScaleW = 0.8f,
+                    lengthScale = 1.0f
+                )
 
-            val modelConfig = OfflineTtsModelConfig(
-                kokoro = kokoroConfig,
-                numThreads = 4,
-                debug = false,
-                provider = "cpu"
-            )
+                val modelConfig = OfflineTtsModelConfig(
+                    vits = vitsConfig,
+                    numThreads = 4,
+                    debug = false,
+                    provider = "cpu"
+                )
 
-            val ttsConfig = OfflineTtsConfig(
-                model = modelConfig,
-                maxNumSentences = 1
-            )
+                val ttsConfig = OfflineTtsConfig(
+                    model = modelConfig,
+                    maxNumSentences = 1
+                )
 
-            tts = OfflineTts(assetManager = null, config = ttsConfig)
-            Log.i(TAG, "Sherpa-ONNX Kokoro TTS inicializado! SampleRate: ${tts?.sampleRate()}, Falantes: ${tts?.numSpeakers()}")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Falha crítica ao instanciar Kokoro TTS: ${e.message}", e)
-            false
+                tts = OfflineTts(assetManager = null, config = ttsConfig)
+                activeBackend = EngineBackend.PIPER_VITS
+                Log.i(TAG, "Sherpa-ONNX Piper VITS inicializado com sucesso! Modelo: ${onnxFile.name}, SampleRate: ${tts?.sampleRate()}, Falantes: ${tts?.numSpeakers()}")
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Falha ao instanciar Piper VITS: ${e.message}", e)
+            }
         }
+
+        // Prioridade 3: Kokoro 82M
+        val kokoroDir = getKokoroModelDir()
+        if (kokoroDir != null) {
+            try {
+                Log.i(TAG, "Inicializando Sherpa-ONNX Kokoro 82M...")
+                val modelFile = File(kokoroDir, "model.int8.onnx")
+                val voicesFile = File(kokoroDir, "voices.bin")
+                val tokensFile = File(kokoroDir, "tokens.txt")
+                val dataDir = File(kokoroDir, "espeak-ng-data")
+                val dictDir = File(kokoroDir, "dict")
+                val lexiconFile = File(kokoroDir, "lexicon-us-en.txt")
+
+                val kokoroConfig = OfflineTtsKokoroModelConfig(
+                    model = modelFile.absolutePath,
+                    voices = voicesFile.absolutePath,
+                    tokens = tokensFile.absolutePath,
+                    dataDir = if (dataDir.exists()) dataDir.absolutePath else (espeakDir?.absolutePath ?: ""),
+                    dictDir = if (dictDir.exists()) dictDir.absolutePath else "",
+                    lexicon = if (lexiconFile.exists()) lexiconFile.absolutePath else "",
+                    lang = "pt-br",
+                    lengthScale = 1.0f
+                )
+
+                val modelConfig = OfflineTtsModelConfig(
+                    kokoro = kokoroConfig,
+                    numThreads = 4,
+                    debug = false,
+                    provider = "cpu"
+                )
+
+                val ttsConfig = OfflineTtsConfig(
+                    model = modelConfig,
+                    maxNumSentences = 1
+                )
+
+                tts = OfflineTts(assetManager = null, config = ttsConfig)
+                activeBackend = EngineBackend.KOKORO
+                Log.i(TAG, "Sherpa-ONNX Kokoro TTS inicializado! SampleRate: ${tts?.sampleRate()}, Falantes: ${tts?.numSpeakers()}")
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Falha crítica ao instanciar Kokoro TTS: ${e.message}", e)
+            }
+        }
+
+        Log.e(TAG, "Nenhum diretório de modelo neural offline válido foi encontrado.")
+        return false
     }
 
     override fun speak(text: String, speed: Float) {
@@ -214,16 +367,26 @@ class KokoroTtsEngine(
                     throw IllegalStateException("Falha ao inicializar motor de voz neural offline.")
                 }
 
-                val speakerId = preferences.kokoroSpeakerId
-                Log.i(TAG, "Sintetizando com speakerId=$speakerId, speed=$currentSpeed...")
+                val speakerId = when (activeBackend) {
+                    EngineBackend.SUPERTONIC -> {
+                        val count = tts!!.numSpeakers()
+                        if (count > 0) preferences.kokoroSpeakerId.coerceIn(0, count - 1) else 0
+                    }
+                    EngineBackend.PIPER_VITS -> {
+                        val count = tts!!.numSpeakers()
+                        if (count > 1) preferences.kokoroSpeakerId.coerceIn(0, count - 1) else 0
+                    }
+                    else -> preferences.kokoroSpeakerId
+                }
+                Log.i(TAG, "Sintetizando [$activeBackend] com speakerId=$speakerId, speed=$currentSpeed...")
                 val synthStart = System.currentTimeMillis()
                 val wavFile = withContext(Dispatchers.IO) {
                     val audio = tts!!.generate(text = textToSpeak, sid = speakerId, speed = currentSpeed)
                     if (audio == null || audio.samples.isEmpty()) {
-                        throw IllegalStateException("Kokoro retornou áudio vazio.")
+                        throw IllegalStateException("Motor neural retornou áudio vazio.")
                     }
 
-                    val cacheFile = File(context.cacheDir, "kokoro_cache_${System.currentTimeMillis()}.wav")
+                    val cacheFile = File(context.cacheDir, "neural_cache_${System.currentTimeMillis()}.wav")
                     val saved = audio.save(cacheFile.absolutePath)
                     if (!saved || !cacheFile.exists() || cacheFile.length() == 0L) {
                         throw IllegalStateException("Falha ao salvar buffer de áudio sintetizado em disco.")

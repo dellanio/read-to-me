@@ -33,7 +33,7 @@ class UserPreferencesRepository(context: Context) {
         const val DEFAULT_ELEVEN_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb" // George (Premade - Grátis e Pago)
         const val DEFAULT_MINIMAX_VOICE_ID = "Portuguese_CaptivatingStoryteller"
         const val DEFAULT_MINIMAX_MODEL = "speech-2.8-hd"
-        const val DEFAULT_KOKORO_SPEAKER_ID = 42 // pf_dora (Feminina PT-BR)
+        const val DEFAULT_KOKORO_SPEAKER_ID = 0 // Faber (Piper VITS On-Device BR)
     }
 
     var kokoroSpeakerId: Int

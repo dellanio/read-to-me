@@ -991,15 +991,16 @@ fun ReadToMeStudioScreen() {
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Chips de vozes Kokoro
-                val kokoroVoices = listOf(
-                    "Dora (Feminina BR)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_PF_DORA,
-                    "Alex (Masculino BR)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_PM_ALEX,
-                    "Santa (Masculino BR)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_PM_SANTA
+                // Chips de vozes neurais offline (Supertonic-3 & Sherpa-ONNX)
+                val neuralVoicesRow1 = listOf(
+                    "Voz 1 (Padrão)" to 0,
+                    "Voz 2 (Expressiva)" to 1,
+                    "Voz 3 (Suave)" to 2,
+                    "Voz 4 (Grave)" to 3
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    kokoroVoices.forEach { (label, id) ->
+                    neuralVoicesRow1.forEach { (label, id) ->
                         val isSelected = kokoroSpeakerId == id
                         Box(
                             modifier = Modifier
@@ -1010,7 +1011,7 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     kokoroSpeakerId = id
                                     prefs.kokoroSpeakerId = id
-                                    Toast.makeText(context, "Voz ReadToMe: $label", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
@@ -1022,13 +1023,15 @@ fun ReadToMeStudioScreen() {
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                val kokoroEnVoices = listOf(
-                    "Sarah (Feminina US)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_AF_SARAH,
-                    "George (Masculino UK)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_BM_GEORGE
+                val neuralVoicesRow2 = listOf(
+                    "Voz 5 (Narrativa)" to 4,
+                    "Voz 6 (Dinâmica)" to 5,
+                    "Voz 7 (Conversacional)" to 6,
+                    "Voz 8 (Clara)" to 7
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    kokoroEnVoices.forEach { (label, id) ->
+                    neuralVoicesRow2.forEach { (label, id) ->
                         val isSelected = kokoroSpeakerId == id
                         Box(
                             modifier = Modifier
@@ -1039,7 +1042,7 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     kokoroSpeakerId = id
                                     prefs.kokoroSpeakerId = id
-                                    Toast.makeText(context, "Voz ReadToMe: $label", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
