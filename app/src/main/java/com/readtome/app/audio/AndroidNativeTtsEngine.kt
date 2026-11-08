@@ -40,6 +40,9 @@ class AndroidNativeTtsEngine(
     override var currentSpeed: Float = 1.0f
         private set
 
+    var currentPitch: Float = 0.70f
+        private set
+
     private var sentences: List<String> = emptyList()
     private var currentIndex: Int = 0
     private var isPaused = false
@@ -95,45 +98,53 @@ class AndroidNativeTtsEngine(
                 (!it.isNetworkConnectionRequired)
             }
 
-            if (isMale && localeVoices.isNotEmpty()) {
+            if (isMale) {
+                // Procura voz masculina genuína (ex: yfj, pmj, jab ou que contenha "male")
+                // ATENÇÃO: afs, ptd, pte são femininas no Google TTS!
                 val maleVoice = localeVoices.firstOrNull { voice ->
                     val name = voice.name.lowercase(Locale.ROOT)
-                    name.contains("male") || name.contains("man") || name.contains("homem") ||
-                    name.contains("masc") || name.contains("afs") || name.contains("yfj") ||
-                    name.contains("ptd") || name.contains("br-local-m") || name.contains("en-us-x-sfg") ||
-                    name.contains("en-us-x-iom")
-                } ?: localeVoices.firstOrNull { voice ->
-                    voice.features?.any { it.contains("male", ignoreCase = true) } == true
+                    (name.contains("male") && !name.contains("female")) ||
+                    name.contains("homem") || name.contains("masc") ||
+                    name.contains("yfj") || name.contains("pmj") || name.contains("jab") ||
+                    name.contains("br-local-m") || name.contains("sfg")
                 }
 
                 if (maleVoice != null) {
                     ttsInstance.voice = maleVoice
-                    ttsInstance.setPitch(1.0f)
-                    Log.i(TAG, "Voz nativa masculina selecionada: ${maleVoice.name}")
+                    currentPitch = 0.80f
+                    ttsInstance.setPitch(currentPitch)
+                    Log.i(TAG, "Voz nativa masculina selecionada: ${maleVoice.name} com pitch $currentPitch")
                 } else {
-                    ttsInstance.setPitch(0.85f)
-                    Log.i(TAG, "Nenhuma voz explicitamente masculina. Aplicando tom 0.85f para timbre masculino.")
+                    // Se o Google TTS não tiver pacote masculino local instalado, usa a modulação de tom grave (0.68f)
+                    // que transforma qualquer voz em um tom grave e masculino bem nítido
+                    val baseVoice = localeVoices.firstOrNull { it.name.contains("afs") } ?: localeVoices.firstOrNull()
+                    if (baseVoice != null) {
+                        ttsInstance.voice = baseVoice
+                    }
+                    currentPitch = 0.68f
+                    ttsInstance.setPitch(currentPitch)
+                    Log.i(TAG, "Pacote masculino nativo não baixado. Aplicando modulação de tom grave ($currentPitch) para voz masculina.")
                 }
-            } else if (!isMale && localeVoices.isNotEmpty()) {
+            } else {
+                // Voz feminina
                 val femaleVoice = localeVoices.firstOrNull { voice ->
                     val name = voice.name.lowercase(Locale.ROOT)
                     name.contains("female") || name.contains("mulher") || name.contains("fem") ||
-                    name.contains("br-local-f") || name.contains("en-us-x-tpf")
-                }
+                    name.contains("afs") || name.contains("ptd") || name.contains("pte") ||
+                    name.contains("br-local-f")
+                } ?: localeVoices.firstOrNull()
+
                 if (femaleVoice != null) {
                     ttsInstance.voice = femaleVoice
                 }
-                ttsInstance.setPitch(1.0f)
-            } else if (isMale) {
-                ttsInstance.setPitch(0.85f)
-            } else {
-                ttsInstance.setPitch(1.0f)
+                currentPitch = 1.05f
+                ttsInstance.setPitch(currentPitch)
+                Log.i(TAG, "Voz nativa feminina selecionada: ${femaleVoice?.name} com pitch $currentPitch")
             }
         } catch (e: Exception) {
             Log.w(TAG, "Aviso ao configurar voz nativa: ${e.message}")
-            if (isMale) {
-                ttsInstance.setPitch(0.85f)
-            }
+            currentPitch = if (isMale) 0.68f else 1.05f
+            ttsInstance.setPitch(currentPitch)
         }
     }
 
@@ -235,6 +246,10 @@ class AndroidNativeTtsEngine(
         val params = Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
         }
+
+        // Garante aplicação estrita de tom e taxa antes de sintetizar
+        tts?.setPitch(currentPitch)
+        tts?.setSpeechRate(currentSpeed)
 
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
     }

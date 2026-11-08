@@ -35,13 +35,13 @@ class UserPreferencesRepository(context: Context) {
         const val DEFAULT_ELEVEN_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb" // George (Premade - Grátis e Pago)
         const val DEFAULT_MINIMAX_VOICE_ID = "Portuguese_CaptivatingStoryteller"
         const val DEFAULT_MINIMAX_MODEL = "speech-2.8-hd"
-        const val DEFAULT_KOKORO_SPEAKER_ID = 6 // Voz 7 (Padrão)
+        const val DEFAULT_KOKORO_SPEAKER_ID = 6 // Voz 1 (Padrão)
     }
 
     var kokoroSpeakerId: Int
         get() {
             val id = prefs.getInt(KEY_KOKORO_SPEAKER_ID, DEFAULT_KOKORO_SPEAKER_ID)
-            return if (id in listOf(1, 2, 3)) DEFAULT_KOKORO_SPEAKER_ID else id
+            return if (id in listOf(6, 0, 4, 5, 7)) id else DEFAULT_KOKORO_SPEAKER_ID
         }
         set(value) = prefs.edit().putInt(KEY_KOKORO_SPEAKER_ID, value).apply()
 

@@ -26,6 +26,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -179,6 +180,7 @@ fun ReadToMeStudioScreen() {
     // Preferências de Idioma e Voz Nativa Masculina
     var speechLanguage by remember { mutableStateOf(prefs.speechLanguage) }
     var nativeVoiceMale by remember { mutableStateOf(prefs.nativeVoiceMale) }
+    val isEn = speechLanguage == "en-US"
 
     // Preferências do Gemini AI
     var geminiApiKey by remember { mutableStateOf(prefs.geminiApiKey) }
@@ -324,7 +326,7 @@ fun ReadToMeStudioScreen() {
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isA11yEnabled) "SISTEMA ATIVO" else "ATIVAR SERVIÇO",
+                        text = if (isA11yEnabled) (if (isEn) "ACTIVE SYSTEM" else "SISTEMA ATIVO") else (if (isEn) "ENABLE SERVICE" else "ATIVAR SERVIÇO"),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isA11yEnabled) Color(0xFF34D399) else Color(0xFFF87171)
@@ -380,7 +382,7 @@ fun ReadToMeStudioScreen() {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Central de Leitura",
+                            text = if (isEn) "Reading Hub" else "Central de Leitura",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White
@@ -400,7 +402,7 @@ fun ReadToMeStudioScreen() {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ContentPaste,
-                                contentDescription = "Colar",
+                                contentDescription = if (isEn) "Paste" else "Colar",
                                 tint = Color(0xFF38BDF8)
                             )
                         }
@@ -415,7 +417,7 @@ fun ReadToMeStudioScreen() {
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Clear,
-                                    contentDescription = "Limpar Campo",
+                                    contentDescription = if (isEn) "Clear Field" else "Limpar Campo",
                                     tint = Color(0xFFEF4444)
                                 )
                             }
@@ -431,7 +433,7 @@ fun ReadToMeStudioScreen() {
                     onValueChange = { directInputText = it },
                     placeholder = {
                         Text(
-                            "Cole texto, link de notícia ou carregue um arquivo (PDF / TXT)...",
+                            if (isEn) "Paste text, news article link or load a file (PDF / TXT)..." else "Cole texto, link de notícia ou carregue um arquivo (PDF / TXT)...",
                             color = Color(0xFF64748B),
                             fontSize = 13.sp
                         )
@@ -516,7 +518,7 @@ fun ReadToMeStudioScreen() {
                     ) {
                         Icon(imageVector = Icons.Default.Link, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Ler Link Web", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(if (isEn) "Read Web Link" else "Ler Link Web", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
 
                     // Botão Carregar Documento (PDF / TXT)
@@ -549,7 +551,11 @@ fun ReadToMeStudioScreen() {
                                 processAndReadWebLink(directInputText)
                             } else {
                                 val text = directInputText.ifBlank {
-                                    "ReadToMe pronto para narrar qualquer conteúdo da sua tela com naturalidade imediata."
+                                    if (isEn) {
+                                        "ReadToMe ready to narrate any content from your screen with immediate natural voice."
+                                    } else {
+                                        "ReadToMe pronto para narrar qualquer conteúdo da sua tela com naturalidade imediata."
+                                    }
                                 }
                                 app.ttsEngine.speak(text, currentSpeed)
                             }
@@ -569,7 +575,7 @@ fun ReadToMeStudioScreen() {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isPlaying) "Parar Áudio" else "Ouvir Agora",
+                        text = if (isPlaying) (if (isEn) "Stop Audio" else "Parar Áudio") else (if (isEn) "Listen Now" else "Ouvir Agora"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
@@ -605,7 +611,7 @@ fun ReadToMeStudioScreen() {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Motores de Voz & IA",
+                            text = if (isEn) "Voice & AI Engines" else "Motores de Voz & IA",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White
@@ -620,14 +626,14 @@ fun ReadToMeStudioScreen() {
                             prefs.kokoroSpeakerId = kokoroSpeakerId
                             prefs.speechLanguage = speechLanguage
                             prefs.nativeVoiceMale = nativeVoiceMale
-                            Toast.makeText(context, "Configurações salvas com sucesso!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (isEn) "Settings saved successfully!" else "Configurações salvas com sucesso!", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4338CA))
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Salvar Tudo", fontSize = 11.sp)
+                        Text(if (isEn) "Save All" else "Salvar Tudo", fontSize = 11.sp)
                     }
                 }
 
@@ -653,7 +659,7 @@ fun ReadToMeStudioScreen() {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (neuralInstalled) "● ReadToMe (Grátis)" else "○ Modelo Pendente",
+                            text = if (neuralInstalled) (if (isEn) "● ReadToMe (Free)" else "● ReadToMe (Grátis)") else (if (isEn) "○ Pending Model" else "○ Modelo Pendente"),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (neuralInstalled) Color(0xFF38BDF8) else Color(0xFF94A3B8)
@@ -671,7 +677,7 @@ fun ReadToMeStudioScreen() {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (elevenConfigured) "● ElevenLabs Ativa" else "○ ElevenLabs Pendente",
+                            text = if (elevenConfigured) (if (isEn) "● ElevenLabs Active" else "● ElevenLabs Ativa") else (if (isEn) "○ ElevenLabs Pending" else "○ ElevenLabs Pendente"),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (elevenConfigured) Color(0xFF34D399) else Color(0xFF94A3B8)
@@ -699,14 +705,14 @@ fun ReadToMeStudioScreen() {
                             .clickable {
                                 selectedVoiceEngine = VoiceEngineType.AUTO_CASCADE
                                 prefs.voiceEngine = VoiceEngineType.AUTO_CASCADE
-                                Toast.makeText(context, "Cascata: ReadToMe (Grátis) ➔ ElevenLabs ➔ Nativo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, if (isEn) "Cascade: ReadToMe (Free) ➔ ElevenLabs ➔ Native" else "Cascata: ReadToMe (Grátis) ➔ ElevenLabs ➔ Nativo", Toast.LENGTH_SHORT).show()
                             }
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "✨ Cascata IA: ReadToMe Neural (Grátis) ➔ ElevenLabs",
+                                text = if (isEn) "✨ AI Cascade: ReadToMe Neural (Free) ➔ ElevenLabs" else "✨ Cascata IA: ReadToMe Neural (Grátis) ➔ ElevenLabs",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (selectedVoiceEngine == VoiceEngineType.AUTO_CASCADE) Color.White else Color(0xFFCBD5E1)
@@ -735,13 +741,13 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     selectedVoiceEngine = VoiceEngineType.KOKORO
                                     prefs.voiceEngine = VoiceEngineType.KOKORO
-                                    Toast.makeText(context, "Modo: ReadToMe Neural (Grátis)", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (isEn) "Mode: ReadToMe Neural (Free)" else "Modo: ReadToMe Neural (Grátis)", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "⚡ ReadToMe (Grátis)",
+                                text = if (isEn) "⚡ ReadToMe (Free)" else "⚡ ReadToMe (Grátis)",
                                 fontSize = 10.sp,
                                 fontWeight = if (selectedVoiceEngine == VoiceEngineType.KOKORO) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedVoiceEngine == VoiceEngineType.KOKORO) Color.White else Color(0xFF94A3B8)
@@ -764,7 +770,7 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     selectedVoiceEngine = VoiceEngineType.ELEVEN_LABS
                                     prefs.voiceEngine = VoiceEngineType.ELEVEN_LABS
-                                    Toast.makeText(context, "Modo: Apenas ElevenLabs", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (isEn) "Mode: ElevenLabs Only" else "Modo: Apenas ElevenLabs", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
@@ -793,13 +799,13 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     selectedVoiceEngine = VoiceEngineType.NATIVE
                                     prefs.voiceEngine = VoiceEngineType.NATIVE
-                                    Toast.makeText(context, "Modo: Android Nativo (Offline)", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (isEn) "Mode: Android Native (Offline)" else "Modo: Android Nativo (Offline)", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Nativo (Android)",
+                                text = if (isEn) "Native (Android)" else "Nativo (Android)",
                                 fontSize = 10.sp,
                                 fontWeight = if (selectedVoiceEngine == VoiceEngineType.NATIVE) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedVoiceEngine == VoiceEngineType.NATIVE) Color.White else Color(0xFF94A3B8)
@@ -819,7 +825,7 @@ fun ReadToMeStudioScreen() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "1. ReadToMe Neural (Grátis - On-Device)",
+                        text = if (isEn) "1. ReadToMe Neural (Free - On-Device)" else "1. ReadToMe Neural (Grátis - On-Device)",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF38BDF8)
@@ -844,15 +850,19 @@ fun ReadToMeStudioScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 10.dp)
+                        ) {
                             Text(
-                                text = if (isNeuralReady) "✓ Modelo On-Device Pronto" else "⚠ Modelo Ausente",
+                                text = if (isNeuralReady) (if (isEn) "✓ On-Device Model Ready" else "✓ Modelo On-Device Pronto") else (if (isEn) "⚠ Model Missing" else "⚠ Modelo Ausente"),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isNeuralReady) Color(0xFF38BDF8) else Color(0xFFFB7185)
                             )
                             Text(
-                                text = if (isNeuralReady) "Vozes Neurais On-Device • 100% Offline e Ilimitadas (Grátis)" else "Copie o modelo para a pasta do app",
+                                text = if (isNeuralReady) (if (isEn) "On-Device Neural Voices • 100% Offline & Unlimited (Free)" else "Vozes Neurais On-Device • 100% Offline e Ilimitadas (Grátis)") else (if (isEn) "Copy model to app directory" else "Copie o modelo para a pasta do app"),
                                 fontSize = 10.sp,
                                 color = Color(0xFF94A3B8)
                             )
@@ -863,16 +873,22 @@ fun ReadToMeStudioScreen() {
                                 prefs.voiceEngine = VoiceEngineType.KOKORO
                                 selectedVoiceEngine = VoiceEngineType.KOKORO
                                 val testText = directInputText.trim().ifBlank {
-                                    "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho de forma gratuita e sem precisar de internet."
+                                    if (isEn) {
+                                        "Hello Dellanio! This is the ReadToMe neural voice, running one hundred percent on your device for free without needing internet."
+                                    } else {
+                                        "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho de forma gratuita e sem precisar de internet."
+                                    }
                                 }
                                 app.ttsEngine.speak(testText, currentSpeed)
                             },
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
                         ) {
                             Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Testar Voz", fontSize = 11.sp)
+                            Text(if (isEn) "Test Voice" else "Testar Voz", fontSize = 11.sp)
                         }
                     }
                 }
@@ -880,18 +896,23 @@ fun ReadToMeStudioScreen() {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Vozes Neurais:",
+                    text = if (isEn) "Neural Voices:" else "Vozes Neurais:",
                     fontSize = 11.sp,
                     color = Color(0xFFCBD5E1),
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Chips de vozes neurais (Voz 2, 3 e 4 removidas conforme solicitado; Voz 7 é o padrão)
+                // Chips de vozes neurais com sequência revisada:
+                // Voz 7 passa a ser Voz 1 (Padrão) -> id 6
+                // Voz 1 passa a ser Voz 2 (Clássica) -> id 0
+                // Voz 5 passa a ser Voz 3 (Narrativa) -> id 4
+                // Voz 6 passa a ser Voz 4 (Dinâmica) -> id 5
+                // Voz 8 passa a ser Voz 5 (Clara) -> id 7
                 val neuralVoicesRow1 = listOf(
-                    "Voz 7 (Padrão)" to 6,
-                    "Voz 1 (Clássica)" to 0,
-                    "Voz 5 (Narrativa)" to 4
+                    (if (isEn) "Voice 1 (Default)" else "Voz 1 (Padrão)") to 6,
+                    (if (isEn) "Voice 2 (Classic)" else "Voz 2 (Clássica)") to 0,
+                    (if (isEn) "Voice 3 (Narrative)" else "Voz 3 (Narrativa)") to 4
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -906,7 +927,7 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     kokoroSpeakerId = id
                                     prefs.kokoroSpeakerId = id
-                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (isEn) "Neural Voice: $label" else "Voz Neural: $label", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
@@ -919,8 +940,8 @@ fun ReadToMeStudioScreen() {
                 Spacer(modifier = Modifier.height(6.dp))
 
                 val neuralVoicesRow2 = listOf(
-                    "Voz 6 (Dinâmica)" to 5,
-                    "Voz 8 (Clara)" to 7
+                    (if (isEn) "Voice 4 (Dynamic)" else "Voz 4 (Dinâmica)") to 5,
+                    (if (isEn) "Voice 5 (Clear)" else "Voz 5 (Clara)") to 7
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -935,7 +956,7 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     kokoroSpeakerId = id
                                     prefs.kokoroSpeakerId = id
-                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (isEn) "Neural Voice: $label" else "Voz Neural: $label", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
@@ -951,7 +972,7 @@ fun ReadToMeStudioScreen() {
                 // SUB-PAINEL 2: ELEVENLABS (NUVEM)
                 // =====================================================================
                 Text(
-                    text = "2. ElevenLabs (Voz de Estúdio - Nuvem)",
+                    text = if (isEn) "2. ElevenLabs (Studio Voice - Cloud)" else "2. ElevenLabs (Voz de Estúdio - Nuvem)",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFC084FC)
@@ -961,7 +982,7 @@ fun ReadToMeStudioScreen() {
                 OutlinedTextField(
                     value = elevenLabsApiKey,
                     onValueChange = { elevenLabsApiKey = it },
-                    label = { Text("Chave API ElevenLabs") },
+                    label = { Text(if (isEn) "ElevenLabs API Key" else "Chave API ElevenLabs") },
                     placeholder = { Text("xi-api-key...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -988,10 +1009,10 @@ fun ReadToMeStudioScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 val elevenVoices = listOf(
-                    "George (Narrador / Grátis)" to "JBFqnCBsd6RMkjVDRZzb",
-                    "Sarah (Feminina / Grátis)" to "EXAVITQu4vr4xnSDxMaL",
-                    "Roger (Expressivo / Grátis)" to "CwhRBWXzGAHq8TQ4Fs17",
-                    "Rachel (Plano Pago)" to "21m00Tcm4TlvDq8ikWAM"
+                    (if (isEn) "George (Narrator / Free)" else "George (Narrador / Grátis)") to "JBFqnCBsd6RMkjVDRZzb",
+                    (if (isEn) "Sarah (Female / Free)" else "Sarah (Feminina / Grátis)") to "EXAVITQu4vr4xnSDxMaL",
+                    (if (isEn) "Roger (Expressive / Free)" else "Roger (Expressivo / Grátis)") to "CwhRBWXzGAHq8TQ4Fs17",
+                    (if (isEn) "Rachel (Paid Plan)" else "Rachel (Plano Pago)") to "21m00Tcm4TlvDq8ikWAM"
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1029,19 +1050,19 @@ fun ReadToMeStudioScreen() {
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFA855F7))
                     ) {
-                        Text("Criar Chave ElevenLabs", fontSize = 11.sp)
+                        Text(if (isEn) "Create ElevenLabs Key" else "Criar Chave ElevenLabs", fontSize = 11.sp)
                     }
 
                     Button(
                         onClick = {
                             prefs.elevenLabsApiKey = elevenLabsApiKey
                             prefs.elevenLabsVoiceId = elevenLabsVoiceId
-                            Toast.makeText(context, "ElevenLabs salva!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (isEn) "ElevenLabs saved!" else "ElevenLabs salva!", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA855F7))
                     ) {
-                        Text("Salvar Eleven", fontSize = 11.sp)
+                        Text(if (isEn) "Save Eleven" else "Salvar Eleven", fontSize = 11.sp)
                     }
                 }
 
@@ -1051,14 +1072,18 @@ fun ReadToMeStudioScreen() {
                 // SUB-PAINEL 3: VOZ NATIVA (ANDROID - OFFLINE)
                 // =====================================================================
                 Text(
-                    text = "3. Voz Nativa (Android - Offline)",
+                    text = if (isEn) "3. Native Voice (Android - Offline)" else "3. Voz Nativa (Android - Offline)",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF60A5FA)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Sintetizador integrado do sistema Android. Funciona 100% offline em qualquer aparelho.",
+                    text = if (isEn) {
+                        "Integrated Android system synthesizer. Works 100% offline on any device."
+                    } else {
+                        "Sintetizador integrado do sistema Android. Funciona 100% offline em qualquer aparelho."
+                    },
                     fontSize = 11.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -1076,12 +1101,12 @@ fun ReadToMeStudioScreen() {
                                 nativeVoiceMale = true
                                 prefs.nativeVoiceMale = true
                                 (app.ttsEngine as? com.readtome.app.audio.SpeechManager)?.nativeEngine?.applyLanguageAndVoice(speechLanguage, true)
-                                Toast.makeText(context, "Voz Nativa configurada: Masculina", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, if (isEn) "Native Voice set: Male" else "Voz Nativa configurada: Masculina", Toast.LENGTH_SHORT).show()
                             }
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("👨 Voz Masculina (Padrão)", fontSize = 11.sp, color = Color.White, fontWeight = if (nativeVoiceMale) FontWeight.Bold else FontWeight.Normal)
+                        Text(if (isEn) "👨 Male Voice (Default)" else "👨 Voz Masculina (Padrão)", fontSize = 11.sp, color = Color.White, fontWeight = if (nativeVoiceMale) FontWeight.Bold else FontWeight.Normal)
                     }
 
                     // Feminina
@@ -1095,12 +1120,12 @@ fun ReadToMeStudioScreen() {
                                 nativeVoiceMale = false
                                 prefs.nativeVoiceMale = false
                                 (app.ttsEngine as? com.readtome.app.audio.SpeechManager)?.nativeEngine?.applyLanguageAndVoice(speechLanguage, false)
-                                Toast.makeText(context, "Voz Nativa configurada: Feminina", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, if (isEn) "Native Voice set: Female" else "Voz Nativa configurada: Feminina", Toast.LENGTH_SHORT).show()
                             }
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("👩 Voz Feminina", fontSize = 11.sp, color = Color.White, fontWeight = if (!nativeVoiceMale) FontWeight.Bold else FontWeight.Normal)
+                        Text(if (isEn) "👩 Female Voice" else "👩 Voz Feminina", fontSize = 11.sp, color = Color.White, fontWeight = if (!nativeVoiceMale) FontWeight.Bold else FontWeight.Normal)
                     }
                 }
 
@@ -1113,7 +1138,11 @@ fun ReadToMeStudioScreen() {
                         val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
                         speechMgr?.nativeEngine?.applyLanguageAndVoice(speechLanguage, nativeVoiceMale)
                         val testText = directInputText.trim().ifBlank {
-                            "Olá Dellanio! Esta é a voz nativa do Android configurada no seu aparelho."
+                            if (isEn) {
+                                "Hello Dellanio! This is the Android native voice configured on your device."
+                            } else {
+                                "Olá Dellanio! Esta é a voz nativa do Android configurada no seu aparelho."
+                            }
                         }
                         speechMgr?.nativeEngine?.speak(testText, currentSpeed)
                     },
@@ -1122,7 +1151,7 @@ fun ReadToMeStudioScreen() {
                 ) {
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Testar Voz Nativa", fontSize = 11.sp)
+                    Text(if (isEn) "Test Native Voice" else "Testar Voz Nativa", fontSize = 11.sp)
                 }
             }
         }
@@ -1155,7 +1184,7 @@ fun ReadToMeStudioScreen() {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Velocidade da Narração",
+                            text = if (isEn) "Narration Speed" else "Velocidade da Narração",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White
@@ -1200,9 +1229,9 @@ fun ReadToMeStudioScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("0.5x (Lento)", fontSize = 11.sp, color = Color(0xFF64748B))
-                    Text("1.0x (Normal)", fontSize = 11.sp, color = Color(0xFF64748B))
-                    Text("2.5x (Rápido)", fontSize = 11.sp, color = Color(0xFF64748B))
+                    Text(if (isEn) "0.5x (Slow)" else "0.5x (Lento)", fontSize = 11.sp, color = Color(0xFF64748B))
+                    Text(if (isEn) "1.0x (Normal)" else "1.0x (Normal)", fontSize = 11.sp, color = Color(0xFF64748B))
+                    Text(if (isEn) "2.5x (Fast)" else "2.5x (Rápido)", fontSize = 11.sp, color = Color(0xFF64748B))
                 }
             }
         }
@@ -1235,7 +1264,7 @@ fun ReadToMeStudioScreen() {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Inteligência Editorial (Gemini)",
+                            text = if (isEn) "Editorial Intelligence (Gemini)" else "Inteligência Editorial (Gemini)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White
@@ -1260,7 +1289,11 @@ fun ReadToMeStudioScreen() {
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Gera entendimento de notícias web e transforma artigos em roteiros de rádio/podcast falados, além de remover ruídos de OCR da tela.",
+                    text = if (isEn) {
+                        "Understands web news and turns articles into spoken radio/podcast scripts, removing OCR noise."
+                    } else {
+                        "Gera entendimento de notícias web e transforma artigos em roteiros de rádio/podcast falados, além de remover ruídos de OCR da tela."
+                    },
                     fontSize = 12.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -1270,7 +1303,7 @@ fun ReadToMeStudioScreen() {
                 OutlinedTextField(
                     value = geminiApiKey,
                     onValueChange = { geminiApiKey = it },
-                    label = { Text("Chave API Gemini (Google AI Studio - Grátis)") },
+                    label = { Text(if (isEn) "Gemini API Key (Google AI Studio - Free)" else "Chave API Gemini (Google AI Studio - Grátis)") },
                     placeholder = { Text("AIzaSy...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -1311,20 +1344,20 @@ fun ReadToMeStudioScreen() {
                     ) {
                         Icon(imageVector = Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Criar Chave Google", fontSize = 12.sp)
+                        Text(if (isEn) "Create Google Key" else "Criar Chave Google", fontSize = 12.sp)
                     }
 
                     Button(
                         onClick = {
                             prefs.geminiApiKey = geminiApiKey
-                            Toast.makeText(context, "Chave do Gemini salva com sucesso!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (isEn) "Gemini key saved successfully!" else "Chave do Gemini salva com sucesso!", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                     ) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Salvar Chave", fontSize = 13.sp)
+                        Text(if (isEn) "Save Key" else "Salvar Chave", fontSize = 13.sp)
                     }
                 }
             }
@@ -1336,7 +1369,7 @@ fun ReadToMeStudioScreen() {
         // 7. MODOS DE CAPTURA RÁPIDA
         // =========================================================================
         Text(
-            text = "Modos de Uso Integrados",
+            text = if (isEn) "Integrated Usage Modes" else "Modos de Uso Integrados",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
@@ -1346,32 +1379,48 @@ fun ReadToMeStudioScreen() {
 
         StudioFeatureCard(
             icon = Icons.Default.Description,
-            title = "Importação de PDF & TXT",
-            description = "Toque em 'PDF / TXT' para ler livros, apostilas ou faturas direto no celular com OCR integrado."
+            title = if (isEn) "PDF & TXT Import" else "Importação de PDF & TXT",
+            description = if (isEn) {
+                "Tap 'PDF / TXT' to read books, documents or invoices directly on your phone with integrated OCR."
+            } else {
+                "Toque em 'PDF / TXT' para ler livros, apostilas ou faturas direto no celular com OCR integrado."
+            }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
         StudioFeatureCard(
             icon = Icons.Default.Link,
-            title = "Leitura Inteligente de Notícias",
-            description = "Cole qualquer link e toque em 'Ler Link Web'. O ReadToMe extrai a notícia e descarta anúncios e menus."
+            title = if (isEn) "Smart News Reader" else "Leitura Inteligente de Notícias",
+            description = if (isEn) {
+                "Paste any link and tap 'Read Web Link'. ReadToMe extracts the article, discarding ads and menus."
+            } else {
+                "Cole qualquer link e toque em 'Ler Link Web'. O ReadToMe extrai a notícia e descarta anúncios e menus."
+            }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
         StudioFeatureCard(
             icon = Icons.Default.CropFree,
-            title = "Seleção Visual na Tela",
-            description = "Toque no botão flutuante e arraste o retângulo para ler qualquer trecho da tela (WhatsApp, Telegram, fotos)."
+            title = if (isEn) "On-Screen Visual Selection" else "Seleção Visual na Tela",
+            description = if (isEn) {
+                "Tap the floating button and drag the rectangle to read any portion of the screen (WhatsApp, Telegram, photos)."
+            } else {
+                "Toque no botão flutuante e arraste o retângulo para ler qualquer trecho da tela (WhatsApp, Telegram, fotos)."
+            }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
         StudioFeatureCard(
             icon = Icons.Default.Security,
-            title = "Atalho Nativo da Samsung",
-            description = "Conectado ao botão de acessibilidade da barra do seu Galaxy: você pode esconder o botão flutuante e usar apenas o atalho do sistema."
+            title = if (isEn) "Samsung Native Shortcut" else "Atalho Nativo da Samsung",
+            description = if (isEn) {
+                "Connected to your Galaxy navigation bar accessibility button: hide the floating bubble and use system gestures."
+            } else {
+                "Conectado ao botão de acessibilidade da barra do seu Galaxy: você pode esconder o botão flutuante e usar apenas o atalho do sistema."
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -1380,7 +1429,7 @@ fun ReadToMeStudioScreen() {
         // 8. CONFIGURAÇÕES DE INTERFACE
         // =========================================================================
         Text(
-            text = "Preferências de Interface",
+            text = if (isEn) "Interface Preferences" else "Preferências de Interface",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
@@ -1427,14 +1476,18 @@ fun ReadToMeStudioScreen() {
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Exibir botão flutuante na tela",
+                            text = if (isEn) "Display floating button on screen" else "Exibir botão flutuante na tela",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Ícone sobre outros apps para ler seleção imediata. Se desativado, utilize o atalho de acessibilidade da barra.",
+                            text = if (isEn) {
+                                "Icon over other apps to instantly read selection. If disabled, use the navigation bar shortcut."
+                            } else {
+                                "Ícone sobre outros apps para ler seleção imediata. Se desativado, utilize o atalho de acessibilidade da barra."
+                            },
                             fontSize = 12.sp,
                             color = Color(0xFF94A3B8)
                         )
@@ -1449,7 +1502,7 @@ fun ReadToMeStudioScreen() {
         // IDIOMA DE LEITURA & SÍNTESE (PORTUGUÊS / INGLÊS)
         // =========================================================================
         Text(
-            text = "Idioma de Fala & Leitura",
+            text = if (isEn) "Speech & Reading Language" else "Idioma de Fala & Leitura",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
@@ -1465,7 +1518,11 @@ fun ReadToMeStudioScreen() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Alterne o idioma principal de pronúncia e síntese de voz (Nativa, ReadToMe e ElevenLabs):",
+                    text = if (isEn) {
+                        "Switch the primary pronunciation and speech synthesis language (Native, ReadToMe and ElevenLabs):"
+                    } else {
+                        "Alterne o idioma principal de pronúncia e síntese de voz (Nativa, ReadToMe e ElevenLabs):"
+                    },
                     fontSize = 12.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -1489,7 +1546,7 @@ fun ReadToMeStudioScreen() {
                                 prefs.speechLanguage = "pt-BR"
                                 val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
                                 speechMgr?.nativeEngine?.applyLanguageAndVoice("pt-BR", nativeVoiceMale)
-                                Toast.makeText(context, "Idioma definido: Português (Brasil)", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, if (isEn) "Language set: Portuguese (Brazil)" else "Idioma definido: Português (Brasil)", Toast.LENGTH_SHORT).show()
                             }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -1506,7 +1563,6 @@ fun ReadToMeStudioScreen() {
                     }
 
                     // Modo Inglês
-                    val isEn = speechLanguage == "en-US"
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -1518,7 +1574,7 @@ fun ReadToMeStudioScreen() {
                                 prefs.speechLanguage = "en-US"
                                 val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
                                 speechMgr?.nativeEngine?.applyLanguageAndVoice("en-US", nativeVoiceMale)
-                                Toast.makeText(context, "Language set: English (US)", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, if (isEn) "Language set: English (US)" else "Idioma definido: Inglês (US)", Toast.LENGTH_SHORT).show()
                             }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -1526,7 +1582,7 @@ fun ReadToMeStudioScreen() {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🇺🇸 ", fontSize = 16.sp)
                             Text(
-                                text = "Inglês (English)",
+                                text = "English (US)",
                                 fontSize = 12.sp,
                                 fontWeight = if (isEn) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isEn) Color.White else Color(0xFF94A3B8)
