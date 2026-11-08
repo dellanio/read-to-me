@@ -18,7 +18,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.readtome.app"
+        applicationId = "com.dellanio.readtome"
         minSdk = 30 // API 30+ para suporte total a takeScreenshot no AccessibilityService
         targetSdk = 36
         versionCode = 1
