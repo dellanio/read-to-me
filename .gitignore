@@ -17,5 +17,8 @@ GEMINI.md
 *.jks
 *.keystore
 keystore.properties
+kokoro-model/
+*.tar.bz2
+*.tar.gz
 
 

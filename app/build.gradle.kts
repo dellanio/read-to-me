@@ -98,4 +98,7 @@ dependencies {
 
     // Gemini SDK
     implementation(libs.google.generativeai)
+
+    // Offline Sherpa-ONNX Engine (Kokoro-82M TTS)
+    implementation(files("libs/sherpa-onnx-2.0.1.aar"))
 }

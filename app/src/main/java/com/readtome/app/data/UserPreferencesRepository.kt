@@ -4,8 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 
 enum class VoiceEngineType {
-    AUTO_CASCADE, // ElevenLabs (Principal) -> MiniMax (Fallback) -> Nativo (Fallback Final)
+    AUTO_CASCADE, // ElevenLabs (Principal) -> Kokoro (Offline Neural) -> Nativo (Fallback Final)
     ELEVEN_LABS,
+    KOKORO,       // ReadToMe Neural (Kokoro-82M Offline)
     MINIMAX,
     NATIVE
 }
@@ -22,6 +23,7 @@ class UserPreferencesRepository(context: Context) {
         private const val KEY_MINIMAX_API_KEY = "minimax_api_key"
         private const val KEY_MINIMAX_VOICE_ID = "minimax_voice_id"
         private const val KEY_MINIMAX_MODEL = "minimax_model"
+        private const val KEY_KOKORO_SPEAKER_ID = "kokoro_speaker_id"
         private const val KEY_VOICE_ENGINE = "voice_engine_type"
         private const val KEY_CLEAN_OCR_WITH_AI = "clean_ocr_with_ai"
         private const val KEY_PLAYBACK_SPEED = "playback_speed"
@@ -31,7 +33,12 @@ class UserPreferencesRepository(context: Context) {
         const val DEFAULT_ELEVEN_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb" // George (Premade - Grátis e Pago)
         const val DEFAULT_MINIMAX_VOICE_ID = "Portuguese_CaptivatingStoryteller"
         const val DEFAULT_MINIMAX_MODEL = "speech-2.8-hd"
+        const val DEFAULT_KOKORO_SPEAKER_ID = 42 // pf_dora (Feminina PT-BR)
     }
+
+    var kokoroSpeakerId: Int
+        get() = prefs.getInt(KEY_KOKORO_SPEAKER_ID, DEFAULT_KOKORO_SPEAKER_ID)
+        set(value) = prefs.edit().putInt(KEY_KOKORO_SPEAKER_ID, value).apply()
 
     var geminiApiKey: String
         get() = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""

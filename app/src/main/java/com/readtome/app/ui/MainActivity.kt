@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleSpeakIntent(intent)
         setContent {
             MaterialTheme {
                 Surface(
@@ -133,6 +134,20 @@ class MainActivity : ComponentActivity() {
                     ReadToMeStudioScreen()
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleSpeakIntent(intent)
+    }
+
+    private fun handleSpeakIntent(intent: Intent?) {
+        val speakText = intent?.getStringExtra("speak_text")
+        if (!speakText.isNullOrBlank()) {
+            val app = application as? ReadToMeApp ?: return
+            app.ttsEngine.speak(speakText, app.preferences.playbackSpeed)
         }
     }
 }
@@ -157,6 +172,9 @@ fun ReadToMeStudioScreen() {
     var elevenLabsApiKey by remember { mutableStateOf(prefs.elevenLabsApiKey) }
     var elevenLabsVoiceId by remember { mutableStateOf(prefs.elevenLabsVoiceId) }
     var showElevenApiKey by remember { mutableStateOf(false) }
+
+    // Preferências ReadToMe Neural (Kokoro 82M Offline)
+    var kokoroSpeakerId by remember { mutableStateOf(prefs.kokoroSpeakerId) }
 
     // Preferências da MiniMax
     var minimaxApiKey by remember { mutableStateOf(prefs.minimaxApiKey) }
@@ -616,13 +634,14 @@ fun ReadToMeStudioScreen() {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Badges de Status das Chaves
+                // Badges de Status das Chaves e Motores
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val elevenConfigured = elevenLabsApiKey.isNotBlank()
-                    val minimaxConfigured = minimaxApiKey.isNotBlank()
+                    val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
+                    val kokoroInstalled = speechMgr?.kokoroEngine?.isModelInstalled() ?: true
 
                     // Badge ElevenLabs
                     Box(
@@ -636,27 +655,27 @@ fun ReadToMeStudioScreen() {
                     ) {
                         Text(
                             text = if (elevenConfigured) "● ElevenLabs Ativa" else "○ ElevenLabs Pendente",
-                            fontSize = 11.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (elevenConfigured) Color(0xFF34D399) else Color(0xFF94A3B8)
                         )
                     }
 
-                    // Badge MiniMax
+                    // Badge ReadToMe Kokoro Offline
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (minimaxConfigured) Color(0x2210B981) else Color(0x2264748B))
-                            .border(1.dp, if (minimaxConfigured) Color(0xFF10B981) else Color(0xFF475569), RoundedCornerShape(8.dp))
+                            .background(if (kokoroInstalled) Color(0x2238BDF8) else Color(0x2264748B))
+                            .border(1.dp, if (kokoroInstalled) Color(0xFF38BDF8) else Color(0xFF475569), RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (minimaxConfigured) "● MiniMax Ativa" else "○ MiniMax Pendente",
-                            fontSize = 11.sp,
+                            text = if (kokoroInstalled) "● ReadToMe Neural Pronto" else "○ Modelo Pendente",
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (minimaxConfigured) Color(0xFF34D399) else Color(0xFF94A3B8)
+                            color = if (kokoroInstalled) Color(0xFF38BDF8) else Color(0xFF94A3B8)
                         )
                     }
                 }
@@ -681,14 +700,14 @@ fun ReadToMeStudioScreen() {
                             .clickable {
                                 selectedVoiceEngine = VoiceEngineType.AUTO_CASCADE
                                 prefs.voiceEngine = VoiceEngineType.AUTO_CASCADE
-                                Toast.makeText(context, "Cascata Ativa: ElevenLabs ➔ MiniMax ➔ Nativo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Cascata: ElevenLabs ➔ ReadToMe Neural ➔ Nativo", Toast.LENGTH_SHORT).show()
                             }
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "✨ Cascata IA: ElevenLabs ➔ MiniMax (Fallback)",
+                                text = "✨ Cascata IA: ElevenLabs ➔ ReadToMe Neural (Offline)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (selectedVoiceEngine == VoiceEngineType.AUTO_CASCADE) Color.White else Color(0xFFCBD5E1)
@@ -701,6 +720,35 @@ fun ReadToMeStudioScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        // ReadToMe Neural (Kokoro Offline)
+                        Box(
+                            modifier = Modifier
+                                .weight(1.2f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (selectedVoiceEngine == VoiceEngineType.KOKORO) Color(0xFF0284C7) else Color(0xFF0F172A)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (selectedVoiceEngine == VoiceEngineType.KOKORO) Color(0xFF38BDF8) else Color(0xFF1E293B),
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .clickable {
+                                    selectedVoiceEngine = VoiceEngineType.KOKORO
+                                    prefs.voiceEngine = VoiceEngineType.KOKORO
+                                    Toast.makeText(context, "Modo: ReadToMe Neural (Kokoro Offline)", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "⚡ ReadToMe (Kokoro)",
+                                fontSize = 10.sp,
+                                fontWeight = if (selectedVoiceEngine == VoiceEngineType.KOKORO) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedVoiceEngine == VoiceEngineType.KOKORO) Color.White else Color(0xFF94A3B8)
+                            )
+                        }
+
                         // ElevenLabs
                         Box(
                             modifier = Modifier
@@ -724,45 +772,16 @@ fun ReadToMeStudioScreen() {
                         ) {
                             Text(
                                 text = "ElevenLabs",
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 fontWeight = if (selectedVoiceEngine == VoiceEngineType.ELEVEN_LABS) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedVoiceEngine == VoiceEngineType.ELEVEN_LABS) Color.White else Color(0xFF94A3B8)
-                            )
-                        }
-
-                        // MiniMax
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    if (selectedVoiceEngine == VoiceEngineType.MINIMAX) Color(0xFF0D9488) else Color(0xFF0F172A)
-                                )
-                                .border(
-                                    1.dp,
-                                    if (selectedVoiceEngine == VoiceEngineType.MINIMAX) Color(0xFF14B8A6) else Color(0xFF1E293B),
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .clickable {
-                                    selectedVoiceEngine = VoiceEngineType.MINIMAX
-                                    prefs.voiceEngine = VoiceEngineType.MINIMAX
-                                    Toast.makeText(context, "Modo: Apenas MiniMax", Toast.LENGTH_SHORT).show()
-                                }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "MiniMax",
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedVoiceEngine == VoiceEngineType.MINIMAX) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedVoiceEngine == VoiceEngineType.MINIMAX) Color.White else Color(0xFF94A3B8)
                             )
                         }
 
                         // Nativo Android
                         Box(
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(0.9f)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
                                     if (selectedVoiceEngine == VoiceEngineType.NATIVE) Color(0xFF2563EB) else Color(0xFF0F172A)
@@ -782,7 +801,7 @@ fun ReadToMeStudioScreen() {
                         ) {
                             Text(
                                 text = "Nativo",
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 fontWeight = if (selectedVoiceEngine == VoiceEngineType.NATIVE) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedVoiceEngine == VoiceEngineType.NATIVE) Color.White else Color(0xFF94A3B8)
                             )
@@ -896,151 +915,227 @@ fun ReadToMeStudioScreen() {
 
 
                 // =====================================================================
-                // SUB-PAINEL 2: CONFIGURAÇÃO MINIMAX (FALLBACK AUTOMÁTICO)
+                // SUB-PAINEL 2: READTOME NEURAL (KOKORO-82M OFFLINE VIA SHERPA-ONNX)
                 // =====================================================================
-                Text(
-                    text = "2. MiniMax (Fallback Automático quando acabar créditos)",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2DD4BF)
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                OutlinedTextField(
-                    value = minimaxApiKey,
-                    onValueChange = { minimaxApiKey = it },
-                    label = { Text("Chave API MiniMax (platform.minimax.io)") },
-                    placeholder = { Text("Bearer token...") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    visualTransformation = if (showMinimaxApiKey) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { showMinimaxApiKey = !showMinimaxApiKey }) {
-                            Icon(
-                                imageVector = if (showMinimaxApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = null,
-                                tint = Color(0xFF94A3B8)
-                            )
-                        }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF0F172A),
-                        unfocusedContainerColor = Color(0xFF0B1120),
-                        focusedBorderColor = Color(0xFF14B8A6),
-                        unfocusedBorderColor = Color(0xFF1E293B),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color(0xFFE2E8F0)
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Modelo MiniMax: speech-2.8-hd vs speech-2.8-turbo
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val models = listOf("speech-2.8-hd" to "HD (Alta Qualidade)", "speech-2.8-turbo" to "Turbo (Rápido)")
-                    models.forEach { (modelId, label) ->
-                        val isSelected = minimaxModel == modelId
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFF0D9488) else Color(0xFF1E293B))
-                                .clickable {
-                                    minimaxModel = modelId
-                                    prefs.minimaxModel = modelId
-                                }
-                                .padding(6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
-                        }
-                    }
+                    Text(
+                        text = "2. ReadToMe Neural (Kokoro Offline - Sem API/Sem Custo)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF38BDF8)
+                    )
                 }
+                Spacer(modifier = Modifier.height(6.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+                val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
+                val kokoroInstalled = speechMgr?.kokoroEngine?.isModelInstalled() ?: true
 
-                // Vozes MiniMax em Português
-                val minimaxVoices = listOf(
-                    "Contador de Histórias" to "Portuguese_CaptivatingStoryteller",
-                    "Narrador" to "Portuguese_Narrator",
-                    "Expressiva" to "Portuguese_SentimentalLady",
-                    "Grave" to "Portuguese_Deep-VoicedGentleman"
-                )
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    minimaxVoices.take(2).forEach { (label, id) ->
-                        val isSelected = minimaxVoiceId == id
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFF0D9488) else Color(0xFF1E293B))
-                                .clickable {
-                                    minimaxVoiceId = id
-                                    prefs.minimaxVoiceId = id
-                                }
-                                .padding(6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
+                // Card de Status do Modelo Local
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (kokoroInstalled) Color(0x1A0284C7) else Color(0x1AF43F5E))
+                        .border(1.dp, if (kokoroInstalled) Color(0xFF0284C7) else Color(0xFFF43F5E), RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = if (kokoroInstalled) "✓ Modelo On-Device Pronto" else "⚠ Modelo Ausente",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (kokoroInstalled) Color(0xFF38BDF8) else Color(0xFFFB7185)
+                            )
+                            Text(
+                                text = if (kokoroInstalled) "Kokoro-82M INT8 (Multilíngue) • 100% Offline" else "Copie o modelo para a pasta do app",
+                                fontSize = 10.sp,
+                                color = Color(0xFF94A3B8)
+                            )
                         }
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    minimaxVoices.drop(2).forEach { (label, id) ->
-                        val isSelected = minimaxVoiceId == id
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFF0D9488) else Color(0xFF1E293B))
-                                .clickable {
-                                    minimaxVoiceId = id
-                                    prefs.minimaxVoiceId = id
-                                }
-                                .padding(6.dp),
-                            contentAlignment = Alignment.Center
+                        Button(
+                            onClick = {
+                                prefs.voiceEngine = VoiceEngineType.KOKORO
+                                selectedVoiceEngine = VoiceEngineType.KOKORO
+                                app.ttsEngine.speak(
+                                    "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho sem precisar de internet.",
+                                    currentSpeed
+                                )
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
                         ) {
-                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center)
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Testar Voz", fontSize = 11.sp)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                Text(
+                    text = "Vozes Neurais (Português do Brasil & Inglês):",
+                    fontSize = 11.sp,
+                    color = Color(0xFFCBD5E1),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Chips de vozes Kokoro
+                val kokoroVoices = listOf(
+                    "Dora (Feminina BR)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_PF_DORA,
+                    "Alex (Masculino BR)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_PM_ALEX,
+                    "Santa (Masculino BR)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_PM_SANTA
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    kokoroVoices.forEach { (label, id) ->
+                        val isSelected = kokoroSpeakerId == id
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B))
+                                .border(1.dp, if (isSelected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    kokoroSpeakerId = id
+                                    prefs.kokoroSpeakerId = id
+                                    Toast.makeText(context, "Voz ReadToMe: $label", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val kokoroEnVoices = listOf(
+                    "Sarah (Feminina US)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_AF_SARAH,
+                    "George (Masculino UK)" to com.readtome.app.audio.KokoroTtsEngine.SPEAKER_BM_GEORGE
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    kokoroEnVoices.forEach { (label, id) ->
+                        val isSelected = kokoroSpeakerId == id
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B))
+                                .border(1.dp, if (isSelected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    kokoroSpeakerId = id
+                                    prefs.kokoroSpeakerId = id
+                                    Toast.makeText(context, "Voz ReadToMe: $label", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // =====================================================================
+                // SUB-PAINEL 3: MINI MAX (OPCIONAL VIA API)
+                // =====================================================================
+                var showMinimaxSection by remember { mutableStateOf(minimaxApiKey.isNotBlank()) }
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showMinimaxSection = !showMinimaxSection },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://platform.minimax.io"))
-                            context.startActivity(intent)
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF14B8A6))
-                    ) {
-                        Text("Criar Chave MiniMax", fontSize = 11.sp)
-                    }
+                    Text(
+                        text = "3. MiniMax T2A (Opcional via API)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF94A3B8)
+                    )
+                    Text(
+                        text = if (showMinimaxSection) "▲ Ocultar" else "▼ Expandir",
+                        fontSize = 10.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
 
-                    Button(
-                        onClick = {
-                            prefs.minimaxApiKey = minimaxApiKey
-                            prefs.minimaxVoiceId = minimaxVoiceId
-                            prefs.minimaxModel = minimaxModel
-                            Toast.makeText(context, "MiniMax salva com sucesso!", Toast.LENGTH_SHORT).show()
+                if (showMinimaxSection) {
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    OutlinedTextField(
+                        value = minimaxApiKey,
+                        onValueChange = { minimaxApiKey = it },
+                        label = { Text("Chave API MiniMax (platform.minimax.io)") },
+                        placeholder = { Text("Bearer token...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        visualTransformation = if (showMinimaxApiKey) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showMinimaxApiKey = !showMinimaxApiKey }) {
+                                Icon(
+                                    imageVector = if (showMinimaxApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    tint = Color(0xFF94A3B8)
+                                )
+                            }
                         },
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF0F172A),
+                            unfocusedContainerColor = Color(0xFF0B1120),
+                            focusedBorderColor = Color(0xFF14B8A6),
+                            unfocusedBorderColor = Color(0xFF1E293B),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFE2E8F0)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Salvar MiniMax", fontSize = 11.sp)
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://platform.minimax.io"))
+                                context.startActivity(intent)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF14B8A6))
+                        ) {
+                            Text("Criar Chave MiniMax", fontSize = 11.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                prefs.minimaxApiKey = minimaxApiKey
+                                prefs.minimaxVoiceId = minimaxVoiceId
+                                prefs.minimaxModel = minimaxModel
+                                Toast.makeText(context, "MiniMax salva com sucesso!", Toast.LENGTH_SHORT).show()
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
+                        ) {
+                            Text("Salvar MiniMax", fontSize = 11.sp)
+                        }
                     }
                 }
             }
