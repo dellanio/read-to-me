@@ -133,7 +133,8 @@ class MiniMaxTtsEngine(
                 Log.e(TAG, "Erro na síntese MiniMax: ${e.message}", e)
                 val isQuotaIssue = e.message?.let {
                     it.contains("401") || it.contains("402") || it.contains("429") ||
-                    it.contains("1004") || it.contains("1005") ||
+                    it.contains("1004") || it.contains("1005") || it.contains("1008") ||
+                    it.contains("balance", ignoreCase = true) ||
                     it.contains("quota", ignoreCase = true) || it.contains("credit", ignoreCase = true)
                 } ?: true
 

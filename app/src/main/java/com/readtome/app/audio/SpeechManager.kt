@@ -68,6 +68,13 @@ class SpeechManager(
         // Configuração da Cascata de Fallback: ElevenLabs -> MiniMax
         elevenLabsEngine.onQuotaExceeded = { remainingText, speed ->
             Log.w(TAG, "ElevenLabs sem créditos/cota. Ativando fallback para MiniMax...")
+            scope.launch(Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    context,
+                    "ElevenLabs sem cota/créditos. Usando voz de contingência...",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
             if (preferences.minimaxApiKey.isNotBlank()) {
                 activeEngine = miniMaxEngine
                 miniMaxEngine.speak(remainingText, speed)
@@ -81,6 +88,13 @@ class SpeechManager(
         // Fallback da MiniMax -> Android Nativo
         miniMaxEngine.onQuotaExceeded = { remainingText, speed ->
             Log.w(TAG, "MiniMax sem créditos/cota. Ativando fallback para Android Nativo...")
+            scope.launch(Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    context,
+                    "MiniMax sem saldo (cota 1008). Usando voz Nativa offline.",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
             activeEngine = nativeEngine
             nativeEngine.speak(remainingText, speed)
         }

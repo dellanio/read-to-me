@@ -28,7 +28,7 @@ class UserPreferencesRepository(context: Context) {
         private const val KEY_SHOW_FLOATING_BUBBLE = "show_floating_bubble"
         
         // Padrões
-        const val DEFAULT_ELEVEN_VOICE_ID = "21m00Tcm4TlvDq8ikWAM" // Rachel
+        const val DEFAULT_ELEVEN_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb" // George (Premade - Grátis e Pago)
         const val DEFAULT_MINIMAX_VOICE_ID = "Portuguese_CaptivatingStoryteller"
         const val DEFAULT_MINIMAX_MODEL = "speech-2.8-hd"
     }

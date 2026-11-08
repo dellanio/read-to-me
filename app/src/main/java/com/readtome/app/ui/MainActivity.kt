@@ -832,12 +832,12 @@ fun ReadToMeStudioScreen() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Chips de vozes ElevenLabs
+                // Chips de vozes ElevenLabs (Premade: Funcionam em contas gratuitas e pagas)
                 val elevenVoices = listOf(
-                    "Rachel (Calma/Feminina)" to "21m00Tcm4TlvDq8ikWAM",
-                    "Adam (Locutor/Masculino)" to "pNInz6obpgDQGcFmaJgB",
-                    "Sarah (Jovem/Expressiva)" to "EXAVITQu4vr4xnSDxMaL",
-                    "George (Narrador Britânico)" to "JBFqnCBsd6RMkjVDRZzb"
+                    "George (Narrador / Grátis)" to "JBFqnCBsd6RMkjVDRZzb",
+                    "Sarah (Feminina / Grátis)" to "EXAVITQu4vr4xnSDxMaL",
+                    "Roger (Expressivo / Grátis)" to "CwhRBWXzGAHq8TQ4Fs17",
+                    "Rachel (Plano Pago)" to "21m00Tcm4TlvDq8ikWAM"
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1360,6 +1360,35 @@ fun ReadToMeStudioScreen() {
                     }
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Rodapé de Versão e Atualização do Aplicativo
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "ReadToMe v${com.readtome.app.BuildConfig.VERSION_NAME} (Build ${com.readtome.app.BuildConfig.VERSION_CODE})",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF64748B)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Atualizado em ${com.readtome.app.BuildConfig.BUILD_TIME}",
+                fontSize = 11.sp,
+                color = Color(0xFF475569)
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "ID: ${com.readtome.app.BuildConfig.APPLICATION_ID}",
+                fontSize = 10.sp,
+                color = Color(0xFF334155)
+            )
         }
 
         Spacer(modifier = Modifier.height(36.dp))
