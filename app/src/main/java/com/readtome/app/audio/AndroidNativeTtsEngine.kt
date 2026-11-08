@@ -93,19 +93,21 @@ class AndroidNativeTtsEngine(
 
         try {
             val availableVoices = ttsInstance.voices ?: emptySet()
+            // Filtra estritamente pelo país (ex: pt-BR para evitar sotaque de Portugal pt-PT)
             val localeVoices = availableVoices.filter {
                 it.locale.language.equals(targetLocale.language, ignoreCase = true) &&
+                (targetLocale.country.isBlank() || it.locale.country.equals(targetLocale.country, ignoreCase = true)) &&
                 (!it.isNetworkConnectionRequired)
             }
 
             if (isMale) {
-                // Procura voz masculina genuína (ex: yfj, pmj, jab ou que contenha "male")
-                // ATENÇÃO: afs, ptd, pte são femininas no Google TTS!
+                // Procura voz masculina genuína do país selecionado (ex: yfj, jab, br-local-m ou que contenha "male")
+                // ATENÇÃO: afs, ptd, pte são femininas no Google TTS pt-BR; pmj é pt-PT (Portugal)!
                 val maleVoice = localeVoices.firstOrNull { voice ->
                     val name = voice.name.lowercase(Locale.ROOT)
                     (name.contains("male") && !name.contains("female")) ||
                     name.contains("homem") || name.contains("masc") ||
-                    name.contains("yfj") || name.contains("pmj") || name.contains("jab") ||
+                    name.contains("yfj") || name.contains("jab") ||
                     name.contains("br-local-m") || name.contains("sfg")
                 }
 
