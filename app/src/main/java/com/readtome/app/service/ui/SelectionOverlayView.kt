@@ -48,6 +48,15 @@ class SelectionOverlayView(
         height = WindowManager.LayoutParams.MATCH_PARENT
     }
 
+    private enum class TouchTarget {
+        NONE,
+        BUTTON_PLAY,
+        BUTTON_RESET,
+        BUTTON_CLOSE,
+        SELECTION_CANVAS
+    }
+
+    private var activeTouchTarget = TouchTarget.NONE
     private var startX = 0f
     private var startY = 0f
     private var isDragging = false
@@ -57,6 +66,7 @@ class SelectionOverlayView(
     private val selectionRect = RectF()
 
     // Botões interativos desenhados no Canvas
+    private val bannerRect = RectF()
     private val btnPlayRect = RectF()
     private val btnResetRect = RectF()
     private val btnCloseRect = RectF()
@@ -160,11 +170,60 @@ class SelectionOverlayView(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        if (w > 0 && h > 0 && !isCustomSelection) {
-            // Seleciona a tela toda por padrão (com margem de 16px para destacar a linha tracejada)
-            val margin = 16f
-            selectionRect.set(margin, margin, w - margin, h - margin)
+        if (w > 0 && h > 0) {
+            if (!isCustomSelection) {
+                // Seleciona a tela toda por padrão (com margem de 16px para destacar a linha tracejada)
+                val margin = 16f
+                selectionRect.set(margin, margin, w - margin, h - margin)
+            }
+            layoutButtons(w.toFloat(), h.toFloat())
         }
+    }
+
+    private fun layoutButtons(w: Float, h: Float) {
+        if (w <= 0 || h <= 0) return
+
+        val bannerWidth = min(w - 60f, 960f)
+        val bannerHeight = 110f
+        val bannerLeft = (w - bannerWidth) / 2f
+        val bannerTop = 80f
+        bannerRect.set(bannerLeft, bannerTop, bannerLeft + bannerWidth, bannerTop + bannerHeight)
+
+        val closeSize = 70f
+        btnCloseRect.set(bannerRect.right - closeSize - 15f, bannerTop + 20f, bannerRect.right - 15f, bannerTop + 20f + closeSize)
+
+        val bottomMargin = 160f
+        val btnPlayWidth = 420f
+        val btnPlayHeight = 120f
+        val btnResetWidth = if (isCustomSelection) 320f else 0f
+        val spacing = 20f
+        val totalActionWidth = btnPlayWidth + (if (isCustomSelection) btnResetWidth + spacing else 0f)
+
+        val actionsLeft = (w - totalActionWidth) / 2f
+        val actionsTop = h - bottomMargin - btnPlayHeight
+
+        if (isCustomSelection) {
+            btnResetRect.set(actionsLeft, actionsTop, actionsLeft + btnResetWidth, actionsTop + btnPlayHeight)
+            val playLeft = btnResetRect.right + spacing
+            btnPlayRect.set(playLeft, actionsTop, playLeft + btnPlayWidth, actionsTop + btnPlayHeight)
+        } else {
+            btnResetRect.setEmpty()
+            btnPlayRect.set(actionsLeft, actionsTop, actionsLeft + btnPlayWidth, actionsTop + btnPlayHeight)
+        }
+    }
+
+    private fun isPointInside(rect: RectF, x: Float, y: Float, margin: Float = 24f): Boolean {
+        if (rect.isEmpty) return false
+        return x >= rect.left - margin && x <= rect.right + margin &&
+               y >= rect.top - margin && y <= rect.bottom + margin
+    }
+
+    private fun resetToFullScreen() {
+        val margin = 16f
+        selectionRect.set(margin, margin, width - margin, height - margin)
+        isCustomSelection = false
+        layoutButtons(width.toFloat(), height.toFloat())
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -177,6 +236,7 @@ class SelectionOverlayView(
             val margin = 16f
             selectionRect.set(margin, margin, w - margin, h - margin)
         }
+        layoutButtons(w, h)
 
         // 1. Desenha o escurecimento do fundo
         canvas.drawRect(0f, 0f, w, h, scrimPaint)
@@ -194,12 +254,6 @@ class SelectionOverlayView(
         }
 
         // 3. Banner superior com instruções
-        val bannerWidth = min(w - 60f, 960f)
-        val bannerHeight = 110f
-        val bannerLeft = (w - bannerWidth) / 2f
-        val bannerTop = 80f
-        val bannerRect = RectF(bannerLeft, bannerTop, bannerLeft + bannerWidth, bannerTop + bannerHeight)
-
         canvas.drawRoundRect(bannerRect, 32f, 32f, pillBackgroundPaint)
         canvas.drawRoundRect(bannerRect, 32f, 32f, pillBorderPaint)
 
@@ -208,39 +262,17 @@ class SelectionOverlayView(
         } else {
             "Tela inteira marcada por padrão. Arraste para recortar."
         }
-        canvas.drawText(instructionText, w / 2f, bannerTop + 70f, textPaint)
+        canvas.drawText(instructionText, w / 2f, bannerRect.top + 70f, textPaint)
 
-        // Botão Fechar (X) no canto superior direito do banner
-        val closeSize = 70f
-        btnCloseRect.set(bannerRect.right - closeSize - 15f, bannerTop + 20f, bannerRect.right - 15f, bannerTop + 20f + closeSize)
-        canvas.drawCircle(btnCloseRect.centerX(), btnCloseRect.centerY(), closeSize / 2f, buttonResetPaint)
+        // Botão Fechar (X)
+        canvas.drawCircle(btnCloseRect.centerX(), btnCloseRect.centerY(), btnCloseRect.width() / 2f, buttonResetPaint)
         canvas.drawText("✕", btnCloseRect.centerX(), btnCloseRect.centerY() + 16f, closeIconPaint)
 
         // 4. Barra de Ações Inferior: [ ⟲ Tela Toda ]  [ ▶ Ouvir Agora ]
-        val bottomMargin = 160f
-        val btnPlayWidth = 420f
-        val btnPlayHeight = 120f
-
-        val btnResetWidth = if (isCustomSelection) 320f else 0f
-        val spacing = 20f
-        val totalActionWidth = btnPlayWidth + (if (isCustomSelection) btnResetWidth + spacing else 0f)
-
-        val actionsLeft = (w - totalActionWidth) / 2f
-        val actionsTop = h - bottomMargin - btnPlayHeight
-
-        if (isCustomSelection) {
-            // Botão Redefinir para Tela Toda
-            btnResetRect.set(actionsLeft, actionsTop, actionsLeft + btnResetWidth, actionsTop + btnPlayHeight)
+        if (isCustomSelection && !btnResetRect.isEmpty) {
             canvas.drawRoundRect(btnResetRect, 30f, 30f, buttonResetPaint)
             canvas.drawRoundRect(btnResetRect, 30f, 30f, buttonBorderPaint)
             canvas.drawText("⟲ Tela Toda", btnResetRect.centerX(), btnResetRect.centerY() + 14f, buttonTextPaint)
-
-            // Botão Ouvir Seleção
-            val playLeft = btnResetRect.right + spacing
-            btnPlayRect.set(playLeft, actionsTop, playLeft + btnPlayWidth, actionsTop + btnPlayHeight)
-        } else {
-            btnResetRect.setEmpty()
-            btnPlayRect.set(actionsLeft, actionsTop, actionsLeft + btnPlayWidth, actionsTop + btnPlayHeight)
         }
 
         // Desenha o Botão Principal "Ouvir Agora"
@@ -274,25 +306,36 @@ class SelectionOverlayView(
         val x = event.x
         val y = event.y
 
-        when (event.action) {
+        when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                // Checa toque nos botões de ação (consome o evento DOWN para receber o UP)
-                if (btnCloseRect.contains(x, y) || (!btnResetRect.isEmpty && btnResetRect.contains(x, y)) || btnPlayRect.contains(x, y)) {
-                    return true
-                }
+                layoutButtons(width.toFloat(), height.toFloat())
 
-                // Inicia potencial desenho de nova área
-                startX = x
-                startY = y
-                isDragging = false
+                // 1. Identifica exatamente onde começou o toque
+                activeTouchTarget = when {
+                    isPointInside(btnCloseRect, x, y, margin = 24f) -> TouchTarget.BUTTON_CLOSE
+                    isPointInside(btnResetRect, x, y, margin = 24f) -> TouchTarget.BUTTON_RESET
+                    isPointInside(btnPlayRect, x, y, margin = 24f) -> TouchTarget.BUTTON_PLAY
+                    else -> {
+                        startX = x
+                        startY = y
+                        isDragging = false
+                        TouchTarget.SELECTION_CANVAS
+                    }
+                }
                 return true
             }
 
             MotionEvent.ACTION_MOVE -> {
+                // Se o toque iniciou em algum botão, NUNCA altera a área de seleção!
+                if (activeTouchTarget != TouchTarget.SELECTION_CANVAS) {
+                    return true
+                }
+
                 val dx = Math.abs(x - startX)
                 val dy = Math.abs(y - startY)
 
-                if (dx > 20 || dy > 20) {
+                // Limiar de 25px para confirmar intenção de arrasto
+                if (isDragging || dx > 25 || dy > 25) {
                     isDragging = true
                     isCustomSelection = true
                     selectionRect.set(
@@ -301,44 +344,48 @@ class SelectionOverlayView(
                         max(startX, x),
                         max(startY, y)
                     )
+                    layoutButtons(width.toFloat(), height.toFloat())
                     invalidate()
                 }
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
-                // Se foi um clique no botão de ação no UP (aciona apenas uma única vez)
-                if (btnCloseRect.contains(x, y)) {
-                    onDismiss()
-                    return true
-                }
-                if (!btnResetRect.isEmpty && btnResetRect.contains(x, y)) {
-                    val margin = 16f
-                    selectionRect.set(margin, margin, width - margin, height - margin)
-                    isCustomSelection = false
-                    invalidate()
-                    return true
-                }
-                if (btnPlayRect.contains(x, y)) {
-                    triggerSelection()
-                    return true
-                }
-
-                if (isDragging) {
-                    // Validar se a área desenhada tem tamanho mínimo útil
-                    if (selectionRect.width() > 60 && selectionRect.height() > 60) {
-                        isCustomSelection = true
-                    } else {
-                        // Se foi um arrasto acidental muito pequeno, volta para tela inteira
-                        val margin = 16f
-                        selectionRect.set(margin, margin, width - margin, height - margin)
-                        isCustomSelection = false
+                when (activeTouchTarget) {
+                    TouchTarget.BUTTON_CLOSE -> {
+                        if (isPointInside(btnCloseRect, x, y, margin = 32f)) {
+                            onDismiss()
+                        }
                     }
-                    isDragging = false
-                    invalidate()
-                    return true
+                    TouchTarget.BUTTON_RESET -> {
+                        if (isPointInside(btnResetRect, x, y, margin = 32f)) {
+                            resetToFullScreen()
+                        }
+                    }
+                    TouchTarget.BUTTON_PLAY -> {
+                        if (isPointInside(btnPlayRect, x, y, margin = 32f)) {
+                            triggerSelection()
+                        }
+                    }
+                    TouchTarget.SELECTION_CANVAS -> {
+                        if (isDragging) {
+                            if (selectionRect.width() < 60 || selectionRect.height() < 60) {
+                                resetToFullScreen()
+                            }
+                        }
+                        // Se foi um simples clique sem arrastar, preserva integralmente a seleção existente!
+                    }
+                    TouchTarget.NONE -> {}
                 }
 
+                activeTouchTarget = TouchTarget.NONE
+                isDragging = false
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                activeTouchTarget = TouchTarget.NONE
+                isDragging = false
                 return true
             }
         }
