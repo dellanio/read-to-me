@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.speech.tts.Voice
+import com.readtome.app.data.UserPreferencesRepository
 import java.util.Locale
 import java.util.UUID
 
@@ -19,7 +21,8 @@ import java.util.UUID
  * Motor nativo de TTS do Android com controle completo de pausa, retomada e parada.
  */
 class AndroidNativeTtsEngine(
-    private val context: Context
+    private val context: Context,
+    private val preferences: UserPreferencesRepository? = null
 ) : TtsEngine, TextToSpeech.OnInitListener {
 
     companion object {
@@ -62,12 +65,7 @@ class AndroidNativeTtsEngine(
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             val ttsInstance = tts ?: return
-            val ptBr = Locale.forLanguageTag("pt-BR")
-            val result = ttsInstance.setLanguage(ptBr)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.w(TAG, "pt-BR não disponível, usando idioma padrão.")
-                ttsInstance.language = Locale.getDefault()
-            }
+            applyLanguageAndVoice()
             ttsInstance.setSpeechRate(currentSpeed)
             setupUtteranceListener(ttsInstance)
             isInitialized = true
@@ -75,6 +73,67 @@ class AndroidNativeTtsEngine(
         } else {
             Log.e(TAG, "Falha ao inicializar o motor nativo TextToSpeech.")
             _playbackState.value = PlaybackState.Error("Falha ao inicializar o sintetizador de voz do Android.")
+        }
+    }
+
+    fun applyLanguageAndVoice(localeTag: String? = null, preferMale: Boolean? = null) {
+        val ttsInstance = tts ?: return
+        val targetTag = localeTag ?: preferences?.speechLanguage ?: "pt-BR"
+        val isMale = preferMale ?: preferences?.nativeVoiceMale ?: true
+
+        val targetLocale = Locale.forLanguageTag(targetTag)
+        val result = ttsInstance.setLanguage(targetLocale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.w(TAG, "$targetTag não disponível, usando idioma padrão.")
+            ttsInstance.language = Locale.getDefault()
+        }
+
+        try {
+            val availableVoices = ttsInstance.voices ?: emptySet()
+            val localeVoices = availableVoices.filter {
+                it.locale.language.equals(targetLocale.language, ignoreCase = true) &&
+                (!it.isNetworkConnectionRequired)
+            }
+
+            if (isMale && localeVoices.isNotEmpty()) {
+                val maleVoice = localeVoices.firstOrNull { voice ->
+                    val name = voice.name.lowercase(Locale.ROOT)
+                    name.contains("male") || name.contains("man") || name.contains("homem") ||
+                    name.contains("masc") || name.contains("afs") || name.contains("yfj") ||
+                    name.contains("ptd") || name.contains("br-local-m") || name.contains("en-us-x-sfg") ||
+                    name.contains("en-us-x-iom")
+                } ?: localeVoices.firstOrNull { voice ->
+                    voice.features?.any { it.contains("male", ignoreCase = true) } == true
+                }
+
+                if (maleVoice != null) {
+                    ttsInstance.voice = maleVoice
+                    ttsInstance.setPitch(1.0f)
+                    Log.i(TAG, "Voz nativa masculina selecionada: ${maleVoice.name}")
+                } else {
+                    ttsInstance.setPitch(0.85f)
+                    Log.i(TAG, "Nenhuma voz explicitamente masculina. Aplicando tom 0.85f para timbre masculino.")
+                }
+            } else if (!isMale && localeVoices.isNotEmpty()) {
+                val femaleVoice = localeVoices.firstOrNull { voice ->
+                    val name = voice.name.lowercase(Locale.ROOT)
+                    name.contains("female") || name.contains("mulher") || name.contains("fem") ||
+                    name.contains("br-local-f") || name.contains("en-us-x-tpf")
+                }
+                if (femaleVoice != null) {
+                    ttsInstance.voice = femaleVoice
+                }
+                ttsInstance.setPitch(1.0f)
+            } else if (isMale) {
+                ttsInstance.setPitch(0.85f)
+            } else {
+                ttsInstance.setPitch(1.0f)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Aviso ao configurar voz nativa: ${e.message}")
+            if (isMale) {
+                ttsInstance.setPitch(0.85f)
+            }
         }
     }
 

@@ -30,7 +30,7 @@ class SpeechManager(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    val nativeEngine = AndroidNativeTtsEngine(context)
+    val nativeEngine = AndroidNativeTtsEngine(context, preferences)
     val elevenLabsEngine = ElevenLabsTtsEngine(context, preferences)
     val kokoroEngine = KokoroTtsEngine(context, preferences)
     val miniMaxEngine = MiniMaxTtsEngine(context, preferences)

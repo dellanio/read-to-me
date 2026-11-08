@@ -173,14 +173,12 @@ fun ReadToMeStudioScreen() {
     var elevenLabsVoiceId by remember { mutableStateOf(prefs.elevenLabsVoiceId) }
     var showElevenApiKey by remember { mutableStateOf(false) }
 
-    // Preferências ReadToMe Neural (Kokoro 82M Offline)
+    // Preferências ReadToMe Neural (Grátis - On-Device)
     var kokoroSpeakerId by remember { mutableStateOf(prefs.kokoroSpeakerId) }
 
-    // Preferências da MiniMax
-    var minimaxApiKey by remember { mutableStateOf(prefs.minimaxApiKey) }
-    var minimaxVoiceId by remember { mutableStateOf(prefs.minimaxVoiceId.ifBlank { "Portuguese_CaptivatingStoryteller" }) }
-    var minimaxModel by remember { mutableStateOf(prefs.minimaxModel) }
-    var showMinimaxApiKey by remember { mutableStateOf(false) }
+    // Preferências de Idioma e Voz Nativa Masculina
+    var speechLanguage by remember { mutableStateOf(prefs.speechLanguage) }
+    var nativeVoiceMale by remember { mutableStateOf(prefs.nativeVoiceMale) }
 
     // Preferências do Gemini AI
     var geminiApiKey by remember { mutableStateOf(prefs.geminiApiKey) }
@@ -451,7 +449,8 @@ fun ReadToMeStudioScreen() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(115.dp),
+                        .height(220.dp),
+                    minLines = 6,
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF0F172A),
@@ -583,7 +582,7 @@ fun ReadToMeStudioScreen() {
 
 
         // =========================================================================
-        // 4. SELETOR DE MOTOR DE VOZ & CASCATA INTELIGENTE (ELEVENLABS + MINIMAX)
+        // 4. SELETOR DE MOTOR DE VOZ & CASCATA INTELIGENTE (READTOME + ELEVENLABS)
         // =========================================================================
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -618,10 +617,10 @@ fun ReadToMeStudioScreen() {
                         onClick = {
                             prefs.elevenLabsApiKey = elevenLabsApiKey
                             prefs.elevenLabsVoiceId = elevenLabsVoiceId
-                            prefs.minimaxApiKey = minimaxApiKey
-                            prefs.minimaxVoiceId = minimaxVoiceId
-                            prefs.minimaxModel = minimaxModel
-                            Toast.makeText(context, "Todas as chaves salvas com sucesso!", Toast.LENGTH_SHORT).show()
+                            prefs.kokoroSpeakerId = kokoroSpeakerId
+                            prefs.speechLanguage = speechLanguage
+                            prefs.nativeVoiceMale = nativeVoiceMale
+                            Toast.makeText(context, "Configurações salvas com sucesso!", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4338CA))
@@ -634,14 +633,32 @@ fun ReadToMeStudioScreen() {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Badges de Status das Chaves e Motores
+                // Badges de Status dos Motores
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val elevenConfigured = elevenLabsApiKey.isNotBlank()
                     val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
-                    val kokoroInstalled = speechMgr?.kokoroEngine?.isModelInstalled() ?: true
+                    val neuralInstalled = speechMgr?.kokoroEngine?.isModelInstalled() ?: true
+                    val elevenConfigured = elevenLabsApiKey.isNotBlank()
+
+                    // Badge ReadToMe Neural (Grátis)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (neuralInstalled) Color(0x2238BDF8) else Color(0x2264748B))
+                            .border(1.dp, if (neuralInstalled) Color(0xFF38BDF8) else Color(0xFF475569), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (neuralInstalled) "● ReadToMe (Grátis)" else "○ Modelo Pendente",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (neuralInstalled) Color(0xFF38BDF8) else Color(0xFF94A3B8)
+                        )
+                    }
 
                     // Badge ElevenLabs
                     Box(
@@ -658,24 +675,6 @@ fun ReadToMeStudioScreen() {
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (elevenConfigured) Color(0xFF34D399) else Color(0xFF94A3B8)
-                        )
-                    }
-
-                    // Badge ReadToMe Kokoro Offline
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (kokoroInstalled) Color(0x2238BDF8) else Color(0x2264748B))
-                            .border(1.dp, if (kokoroInstalled) Color(0xFF38BDF8) else Color(0xFF475569), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (kokoroInstalled) "● ReadToMe Neural Pronto" else "○ Modelo Pendente",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (kokoroInstalled) Color(0xFF38BDF8) else Color(0xFF94A3B8)
                         )
                     }
                 }
@@ -700,14 +699,14 @@ fun ReadToMeStudioScreen() {
                             .clickable {
                                 selectedVoiceEngine = VoiceEngineType.AUTO_CASCADE
                                 prefs.voiceEngine = VoiceEngineType.AUTO_CASCADE
-                                Toast.makeText(context, "Cascata: ReadToMe Neural ➔ ElevenLabs ➔ Nativo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Cascata: ReadToMe (Grátis) ➔ ElevenLabs ➔ Nativo", Toast.LENGTH_SHORT).show()
                             }
                             .padding(horizontal = 14.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "✨ Cascata IA: ReadToMe Neural (Offline) ➔ ElevenLabs",
+                                text = "✨ Cascata IA: ReadToMe Neural (Grátis) ➔ ElevenLabs",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (selectedVoiceEngine == VoiceEngineType.AUTO_CASCADE) Color.White else Color(0xFFCBD5E1)
@@ -715,12 +714,12 @@ fun ReadToMeStudioScreen() {
                         }
                     }
 
-                    // Linha 2: Motores Individuais
+                    // Linha 2: Motores Individuais (Ordem: 1) ReadToMe, 2) ElevenLabs, 3) Nativo)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // ReadToMe Neural (Kokoro Offline)
+                        // 1. ReadToMe (Grátis)
                         Box(
                             modifier = Modifier
                                 .weight(1.2f)
@@ -736,20 +735,20 @@ fun ReadToMeStudioScreen() {
                                 .clickable {
                                     selectedVoiceEngine = VoiceEngineType.KOKORO
                                     prefs.voiceEngine = VoiceEngineType.KOKORO
-                                    Toast.makeText(context, "Modo: ReadToMe Neural (Kokoro Offline)", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Modo: ReadToMe Neural (Grátis)", Toast.LENGTH_SHORT).show()
                                 }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "⚡ ReadToMe (Kokoro)",
+                                text = "⚡ ReadToMe (Grátis)",
                                 fontSize = 10.sp,
                                 fontWeight = if (selectedVoiceEngine == VoiceEngineType.KOKORO) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedVoiceEngine == VoiceEngineType.KOKORO) Color.White else Color(0xFF94A3B8)
                             )
                         }
 
-                        // ElevenLabs
+                        // 2. ElevenLabs
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -778,7 +777,7 @@ fun ReadToMeStudioScreen() {
                             )
                         }
 
-                        // Nativo Android
+                        // 3. Nativo (Android)
                         Box(
                             modifier = Modifier
                                 .weight(0.9f)
@@ -800,7 +799,7 @@ fun ReadToMeStudioScreen() {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Nativo",
+                                text = "Nativo (Android)",
                                 fontSize = 10.sp,
                                 fontWeight = if (selectedVoiceEngine == VoiceEngineType.NATIVE) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedVoiceEngine == VoiceEngineType.NATIVE) Color.White else Color(0xFF94A3B8)
@@ -812,10 +811,147 @@ fun ReadToMeStudioScreen() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // =====================================================================
-                // SUB-PAINEL 1: CONFIGURAÇÃO ELEVENLABS (PRINCIPAL)
+                // SUB-PAINEL 1: READTOME NEURAL (GRÁTIS - ON-DEVICE)
+                // =====================================================================
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "1. ReadToMe Neural (Grátis - On-Device)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF38BDF8)
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val speechMgrInstance = app.ttsEngine as? com.readtome.app.audio.SpeechManager
+                val isNeuralReady = speechMgrInstance?.kokoroEngine?.isModelInstalled() ?: true
+
+                // Card de Status do Modelo Local
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isNeuralReady) Color(0x1A0284C7) else Color(0x1AF43F5E))
+                        .border(1.dp, if (isNeuralReady) Color(0xFF0284C7) else Color(0xFFF43F5E), RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = if (isNeuralReady) "✓ Modelo On-Device Pronto" else "⚠ Modelo Ausente",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isNeuralReady) Color(0xFF38BDF8) else Color(0xFFFB7185)
+                            )
+                            Text(
+                                text = if (isNeuralReady) "Vozes Neurais On-Device • 100% Offline e Ilimitadas (Grátis)" else "Copie o modelo para a pasta do app",
+                                fontSize = 10.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                prefs.voiceEngine = VoiceEngineType.KOKORO
+                                selectedVoiceEngine = VoiceEngineType.KOKORO
+                                val testText = directInputText.trim().ifBlank {
+                                    "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho de forma gratuita e sem precisar de internet."
+                                }
+                                app.ttsEngine.speak(testText, currentSpeed)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                        ) {
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Testar Voz", fontSize = 11.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Vozes Neurais:",
+                    fontSize = 11.sp,
+                    color = Color(0xFFCBD5E1),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Chips de vozes neurais (Voz 2, 3 e 4 removidas conforme solicitado; Voz 7 é o padrão)
+                val neuralVoicesRow1 = listOf(
+                    "Voz 7 (Padrão)" to 6,
+                    "Voz 1 (Clássica)" to 0,
+                    "Voz 5 (Narrativa)" to 4
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    neuralVoicesRow1.forEach { (label, id) ->
+                        val isSelected = kokoroSpeakerId == id
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B))
+                                .border(1.dp, if (isSelected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    kokoroSpeakerId = id
+                                    prefs.kokoroSpeakerId = id
+                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                val neuralVoicesRow2 = listOf(
+                    "Voz 6 (Dinâmica)" to 5,
+                    "Voz 8 (Clara)" to 7
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    neuralVoicesRow2.forEach { (label, id) ->
+                        val isSelected = kokoroSpeakerId == id
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B))
+                                .border(1.dp, if (isSelected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                .clickable {
+                                    kokoroSpeakerId = id
+                                    prefs.kokoroSpeakerId = id
+                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // =====================================================================
+                // SUB-PAINEL 2: ELEVENLABS (NUVEM)
                 // =====================================================================
                 Text(
-                    text = "1. ElevenLabs (Voz de Estúdio - Principal)",
+                    text = "2. ElevenLabs (Voz de Estúdio - Nuvem)",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFC084FC)
@@ -851,7 +987,6 @@ fun ReadToMeStudioScreen() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Chips de vozes ElevenLabs (Premade: Funcionam em contas gratuitas e pagas)
                 val elevenVoices = listOf(
                     "George (Narrador / Grátis)" to "JBFqnCBsd6RMkjVDRZzb",
                     "Sarah (Feminina / Grátis)" to "EXAVITQu4vr4xnSDxMaL",
@@ -910,236 +1045,84 @@ fun ReadToMeStudioScreen() {
                     }
                 }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-
-
-                // =====================================================================
-                // SUB-PAINEL 2: READTOME NEURAL (KOKORO-82M OFFLINE VIA SHERPA-ONNX)
-                // =====================================================================
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "2. ReadToMe Neural (Kokoro Offline - Sem API/Sem Custo)",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF38BDF8)
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
-                val kokoroInstalled = speechMgr?.kokoroEngine?.isModelInstalled() ?: true
-
-                // Card de Status do Modelo Local
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (kokoroInstalled) Color(0x1A0284C7) else Color(0x1AF43F5E))
-                        .border(1.dp, if (kokoroInstalled) Color(0xFF0284C7) else Color(0xFFF43F5E), RoundedCornerShape(10.dp))
-                        .padding(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = if (kokoroInstalled) "✓ Modelo On-Device Pronto" else "⚠ Modelo Ausente",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (kokoroInstalled) Color(0xFF38BDF8) else Color(0xFFFB7185)
-                            )
-                            Text(
-                                text = if (kokoroInstalled) "Kokoro-82M INT8 (Multilíngue) • 100% Offline" else "Copie o modelo para a pasta do app",
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8)
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                prefs.voiceEngine = VoiceEngineType.KOKORO
-                                selectedVoiceEngine = VoiceEngineType.KOKORO
-                                val testText = directInputText.trim().ifBlank {
-                                    "Olá Dellanio! Esta é a voz neural ReadToMe, rodando cem por cento no seu aparelho sem precisar de internet."
-                                }
-                                app.ttsEngine.speak(testText, currentSpeed)
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
-                        ) {
-                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Testar Voz", fontSize = 11.sp)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "Vozes Neurais (Português do Brasil & Inglês):",
-                    fontSize = 11.sp,
-                    color = Color(0xFFCBD5E1),
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Chips de vozes neurais offline (Supertonic-3 & Sherpa-ONNX)
-                val neuralVoicesRow1 = listOf(
-                    "Voz 1 (Padrão)" to 0,
-                    "Voz 2 (Expressiva)" to 1,
-                    "Voz 3 (Suave)" to 2,
-                    "Voz 4 (Grave)" to 3
-                )
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    neuralVoicesRow1.forEach { (label, id) ->
-                        val isSelected = kokoroSpeakerId == id
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B))
-                                .border(1.dp, if (isSelected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
-                                .clickable {
-                                    kokoroSpeakerId = id
-                                    prefs.kokoroSpeakerId = id
-                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
-                                }
-                                .padding(8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val neuralVoicesRow2 = listOf(
-                    "Voz 5 (Narrativa)" to 4,
-                    "Voz 6 (Dinâmica)" to 5,
-                    "Voz 7 (Conversacional)" to 6,
-                    "Voz 8 (Clara)" to 7
-                )
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    neuralVoicesRow2.forEach { (label, id) ->
-                        val isSelected = kokoroSpeakerId == id
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFF0284C7) else Color(0xFF1E293B))
-                                .border(1.dp, if (isSelected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
-                                .clickable {
-                                    kokoroSpeakerId = id
-                                    prefs.kokoroSpeakerId = id
-                                    Toast.makeText(context, "Voz Neural: $label", Toast.LENGTH_SHORT).show()
-                                }
-                                .padding(8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(label, fontSize = 10.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
-                        }
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // =====================================================================
-                // SUB-PAINEL 3: MINI MAX (OPCIONAL VIA API)
+                // SUB-PAINEL 3: VOZ NATIVA (ANDROID - OFFLINE)
                 // =====================================================================
-                var showMinimaxSection by remember { mutableStateOf(minimaxApiKey.isNotBlank()) }
+                Text(
+                    text = "3. Voz Nativa (Android - Offline)",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF60A5FA)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Sintetizador integrado do sistema Android. Funciona 100% offline em qualquer aparelho.",
+                    fontSize = 11.sp,
+                    color = Color(0xFF94A3B8)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showMinimaxSection = !showMinimaxSection },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "3. MiniMax T2A (Opcional via API)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF94A3B8)
-                    )
-                    Text(
-                        text = if (showMinimaxSection) "▲ Ocultar" else "▼ Expandir",
-                        fontSize = 10.sp,
-                        color = Color(0xFF64748B)
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Masculina (Padrão)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (nativeVoiceMale) Color(0xFF2563EB) else Color(0xFF1E293B))
+                            .border(1.dp, if (nativeVoiceMale) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                            .clickable {
+                                nativeVoiceMale = true
+                                prefs.nativeVoiceMale = true
+                                (app.ttsEngine as? com.readtome.app.audio.SpeechManager)?.nativeEngine?.applyLanguageAndVoice(speechLanguage, true)
+                                Toast.makeText(context, "Voz Nativa configurada: Masculina", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("👨 Voz Masculina (Padrão)", fontSize = 11.sp, color = Color.White, fontWeight = if (nativeVoiceMale) FontWeight.Bold else FontWeight.Normal)
+                    }
+
+                    // Feminina
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (!nativeVoiceMale) Color(0xFF2563EB) else Color(0xFF1E293B))
+                            .border(1.dp, if (!nativeVoiceMale) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                            .clickable {
+                                nativeVoiceMale = false
+                                prefs.nativeVoiceMale = false
+                                (app.ttsEngine as? com.readtome.app.audio.SpeechManager)?.nativeEngine?.applyLanguageAndVoice(speechLanguage, false)
+                                Toast.makeText(context, "Voz Nativa configurada: Feminina", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("👩 Voz Feminina", fontSize = 11.sp, color = Color.White, fontWeight = if (!nativeVoiceMale) FontWeight.Bold else FontWeight.Normal)
+                    }
                 }
 
-                if (showMinimaxSection) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    OutlinedTextField(
-                        value = minimaxApiKey,
-                        onValueChange = { minimaxApiKey = it },
-                        label = { Text("Chave API MiniMax (platform.minimax.io)") },
-                        placeholder = { Text("Bearer token...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        visualTransformation = if (showMinimaxApiKey) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = { showMinimaxApiKey = !showMinimaxApiKey }) {
-                                Icon(
-                                    imageVector = if (showMinimaxApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = null,
-                                    tint = Color(0xFF94A3B8)
-                                )
-                            }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFF0F172A),
-                            unfocusedContainerColor = Color(0xFF0B1120),
-                            focusedBorderColor = Color(0xFF14B8A6),
-                            unfocusedBorderColor = Color(0xFF1E293B),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color(0xFFE2E8F0)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://platform.minimax.io"))
-                                context.startActivity(intent)
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF14B8A6))
-                        ) {
-                            Text("Criar Chave MiniMax", fontSize = 11.sp)
+                Button(
+                    onClick = {
+                        selectedVoiceEngine = VoiceEngineType.NATIVE
+                        prefs.voiceEngine = VoiceEngineType.NATIVE
+                        val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
+                        speechMgr?.nativeEngine?.applyLanguageAndVoice(speechLanguage, nativeVoiceMale)
+                        val testText = directInputText.trim().ifBlank {
+                            "Olá Dellanio! Esta é a voz nativa do Android configurada no seu aparelho."
                         }
-
-                        Button(
-                            onClick = {
-                                prefs.minimaxApiKey = minimaxApiKey
-                                prefs.minimaxVoiceId = minimaxVoiceId
-                                prefs.minimaxModel = minimaxModel
-                                Toast.makeText(context, "MiniMax salva com sucesso!", Toast.LENGTH_SHORT).show()
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
-                        ) {
-                            Text("Salvar MiniMax", fontSize = 11.sp)
-                        }
-                    }
+                        speechMgr?.nativeEngine?.speak(testText, currentSpeed)
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                ) {
+                    Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Testar Voz Nativa", fontSize = 11.sp)
                 }
             }
         }
@@ -1455,6 +1438,100 @@ fun ReadToMeStudioScreen() {
                             fontSize = 12.sp,
                             color = Color(0xFF94A3B8)
                         )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // =========================================================================
+        // IDIOMA DE LEITURA & SÍNTESE (PORTUGUÊS / INGLÊS)
+        // =========================================================================
+        Text(
+            text = "Idioma de Fala & Leitura",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF111827)),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1F2937))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Alterne o idioma principal de pronúncia e síntese de voz (Nativa, ReadToMe e ElevenLabs):",
+                    fontSize = 12.sp,
+                    color = Color(0xFF94A3B8)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val isPt = speechLanguage == "pt-BR"
+                    // Modo Português
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isPt) Color(0xFF0284C7) else Color(0xFF0F172A))
+                            .border(1.dp, if (isPt) Color(0xFF38BDF8) else Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                            .clickable {
+                                speechLanguage = "pt-BR"
+                                prefs.speechLanguage = "pt-BR"
+                                val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
+                                speechMgr?.nativeEngine?.applyLanguageAndVoice("pt-BR", nativeVoiceMale)
+                                Toast.makeText(context, "Idioma definido: Português (Brasil)", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🇧🇷 ", fontSize = 16.sp)
+                            Text(
+                                text = "Português (BR)",
+                                fontSize = 12.sp,
+                                fontWeight = if (isPt) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isPt) Color.White else Color(0xFF94A3B8)
+                            )
+                        }
+                    }
+
+                    // Modo Inglês
+                    val isEn = speechLanguage == "en-US"
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isEn) Color(0xFF0284C7) else Color(0xFF0F172A))
+                            .border(1.dp, if (isEn) Color(0xFF38BDF8) else Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                            .clickable {
+                                speechLanguage = "en-US"
+                                prefs.speechLanguage = "en-US"
+                                val speechMgr = app.ttsEngine as? com.readtome.app.audio.SpeechManager
+                                speechMgr?.nativeEngine?.applyLanguageAndVoice("en-US", nativeVoiceMale)
+                                Toast.makeText(context, "Language set: English (US)", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🇺🇸 ", fontSize = 16.sp)
+                            Text(
+                                text = "Inglês (English)",
+                                fontSize = 12.sp,
+                                fontWeight = if (isEn) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isEn) Color.White else Color(0xFF94A3B8)
+                            )
+                        }
                     }
                 }
             }

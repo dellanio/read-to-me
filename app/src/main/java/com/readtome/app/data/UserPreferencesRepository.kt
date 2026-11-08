@@ -28,16 +28,21 @@ class UserPreferencesRepository(context: Context) {
         private const val KEY_CLEAN_OCR_WITH_AI = "clean_ocr_with_ai"
         private const val KEY_PLAYBACK_SPEED = "playback_speed"
         private const val KEY_SHOW_FLOATING_BUBBLE = "show_floating_bubble"
+        private const val KEY_SPEECH_LANGUAGE = "speech_language"
+        private const val KEY_NATIVE_VOICE_MALE = "native_voice_male"
         
         // Padrões
         const val DEFAULT_ELEVEN_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb" // George (Premade - Grátis e Pago)
         const val DEFAULT_MINIMAX_VOICE_ID = "Portuguese_CaptivatingStoryteller"
         const val DEFAULT_MINIMAX_MODEL = "speech-2.8-hd"
-        const val DEFAULT_KOKORO_SPEAKER_ID = 0 // Faber (Piper VITS On-Device BR)
+        const val DEFAULT_KOKORO_SPEAKER_ID = 6 // Voz 7 (Padrão)
     }
 
     var kokoroSpeakerId: Int
-        get() = prefs.getInt(KEY_KOKORO_SPEAKER_ID, DEFAULT_KOKORO_SPEAKER_ID)
+        get() {
+            val id = prefs.getInt(KEY_KOKORO_SPEAKER_ID, DEFAULT_KOKORO_SPEAKER_ID)
+            return if (id in listOf(1, 2, 3)) DEFAULT_KOKORO_SPEAKER_ID else id
+        }
         set(value) = prefs.edit().putInt(KEY_KOKORO_SPEAKER_ID, value).apply()
 
     var geminiApiKey: String
@@ -86,4 +91,12 @@ class UserPreferencesRepository(context: Context) {
     var playbackSpeed: Float
         get() = prefs.getFloat(KEY_PLAYBACK_SPEED, 1.0f)
         set(value) = prefs.edit().putFloat(KEY_PLAYBACK_SPEED, value).apply()
+
+    var speechLanguage: String
+        get() = prefs.getString(KEY_SPEECH_LANGUAGE, "pt-BR") ?: "pt-BR"
+        set(value) = prefs.edit().putString(KEY_SPEECH_LANGUAGE, value).apply()
+
+    var nativeVoiceMale: Boolean
+        get() = prefs.getBoolean(KEY_NATIVE_VOICE_MALE, true)
+        set(value) = prefs.edit().putBoolean(KEY_NATIVE_VOICE_MALE, value).apply()
 }
