@@ -87,14 +87,15 @@ class FloatingBubbleView(
         bubbleContainer = FrameLayout(context).apply {
             background = backgroundDrawable
             elevation = dpToPx(12).toFloat()
+            clipToOutline = true
         }
 
-        // Ícone em modo ocioso (Novo Ícone 3D Studio ReadToMe Laranja e Metálico)
+        // Ícone em modo ocioso (Microfone 3D Studio Laranja e Metálico)
         idleIcon = ImageView(context).apply {
             setImageResource(R.drawable.ic_readtome_bubble)
-            val pad = dpToPx(3)
+            val pad = dpToPx(2)
             setPadding(pad, pad, pad, pad)
-            scaleType = ImageView.ScaleType.FIT_CENTER
+            scaleType = ImageView.ScaleType.CENTER_CROP
         }
         bubbleContainer.addView(idleIcon, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
