@@ -102,6 +102,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -187,11 +188,39 @@ private val PlayButtonGradient = Brush.radialGradient(
     )
 )
 
-// Gradiente para Cards Translúcidos Metálicos
-private val CardGradient = Brush.verticalGradient(
+// Gradiente para Cards Translúcidos Metálicos (Fiel ao crop do usuário)
+private val CardGlassGradient = Brush.verticalGradient(
     listOf(
-        Color(0xFF151722),
-        Color(0xFF0E1017)
+        Color(0xFF2A3042), // Topo com reflexo prateado translúcido e luminoso
+        Color(0xFF1D212D), // Carvão superior metálico
+        Color(0xFF13151D), // Centro do card
+        Color(0xFF0A0C11)  // Base escura profunda
+    )
+)
+private val CardGradient = CardGlassGradient
+
+// Borda Metálica com Destaque Hairline no Topo
+private val CardBorderBrush = Brush.verticalGradient(
+    listOf(
+        Color(0xFFA8B3CC), // Brilho prateado nítido e luminoso na borda superior
+        Color(0xFF485068), // Meio metálico
+        Color(0xFF1D202A)  // Base escura
+    )
+)
+
+// Gradiente dos Cards de Botão Toggle (Destacar Texto / Modo Foco)
+private val ToggleCardGradient = Brush.verticalGradient(
+    listOf(
+        Color(0xFF2D3242), // Topo com brilho
+        Color(0xFF1B1E28), // Meio
+        Color(0xFF101218)  // Base
+    )
+)
+
+private val ToggleBorderBrush = Brush.verticalGradient(
+    listOf(
+        Color(0xFF6B7594), // Topo prateado luminoso
+        Color(0xFF262A38)  // Base
     )
 )
 
@@ -426,69 +455,76 @@ fun ReadToMeStudioScreen() {
         ) {
                 // =========================================================================
         // 1. CABEÇALHO COM IDENTIDADE VISUAL OFICIAL: LOGO + HERO 3D + AJUSTES
+        // Proporções ampliadas conforme mockup oficial
         // =========================================================================
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            // Lado Esquerdo: Logotipo ReadToMe + Slogan
-            Column(modifier = Modifier.weight(1f)) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_readtome_logo),
-                    contentDescription = "ReadToMe",
-                    modifier = Modifier
-                        .height(30.dp)
-                        .fillMaxWidth(0.92f),
-                    contentScale = ContentScale.Fit,
-                    alignment = Alignment.CenterStart
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = if (isEn) "Read, listen and follow your texts" else "Leia, ouça e acompanhe seus textos",
-                    fontSize = 11.sp,
-                    color = SilverDark,
-                    maxLines = 1
-                )
-            }
-
-            // Lado Direito: Ilustração 3D Oficial (Headphone sobre Livro Aberto com Ondas) + Engrenagem
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Hero 3D Oficial
-                Image(
-                    painter = painterResource(id = R.drawable.ic_readtome_hero),
-                    contentDescription = "ReadToMe 3D Hero",
+                // Lado Esquerdo: Logotipo ReadToMe Amplo + Slogan
+                Column(
                     modifier = Modifier
-                        .height(56.dp)
-                        .width(96.dp),
-                    contentScale = ContentScale.Fit
-                )
-
-                // Botão Metálico Circular de Ajustes
-                IconButton(
-                    onClick = { currentTab = StudioTab.AJUSTES },
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF141620))
-                        .border(1.dp, Color(0xFF282D3D), CircleShape)
+                        .weight(1f)
+                        .padding(end = 6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Ajustes",
-                        tint = if (currentTab == StudioTab.AJUSTES) OrangePrimary else SilverBright,
-                        modifier = Modifier.size(18.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_readtome_logo),
+                        contentDescription = "ReadToMe",
+                        modifier = Modifier
+                            .height(52.dp)
+                            .width(170.dp),
+                        contentScale = ContentScale.Fit,
+                        alignment = Alignment.CenterStart
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isEn) "Read, listen and follow your texts" else "Leia, ouça e acompanhe seus textos",
+                        fontSize = 10.5.sp,
+                        color = Color(0xFF8E93A6),
+                        maxLines = 1
+                    )
+                }
+
+                // Lado Direito: Ilustração 3D Oficial Grande e Destacada + Botão de Ajustes
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_readtome_hero),
+                        contentDescription = "ReadToMe 3D Hero",
+                        modifier = Modifier
+                            .height(80.dp)
+                            .width(112.dp),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    // Botão Metálico Circular de Ajustes
+                    IconButton(
+                        onClick = { currentTab = StudioTab.AJUSTES },
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF141620))
+                            .border(1.dp, Color(0xFF282D3D), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Ajustes",
+                            tint = if (currentTab == StudioTab.AJUSTES) OrangePrimary else SilverBright,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
                 }
             }
         }
 
-        // =========================================================================
         // 2. BARRA DE NAVEGAÇÃO HORIZONTAL EM CONTAINER UNIFICADO (DESIGN 02)
         Box(
             modifier = Modifier
@@ -717,6 +753,73 @@ fun ReadToMeStudioScreen() {
 // =========================================================================
 // ABA 1: LEITURA (PLAYER, EDITOR E IMPORTAÇÃO)
 // =========================================================================
+// =========================================================================
+// SWITCH METÁLICO 3D COM ACABAMENTO SKEUOMÓRFICO IDÊNTICO AO PROTÓTIPO
+// =========================================================================
+@Composable
+fun GlossySwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val thumbOffset by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (checked) 18f else 2f,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        label = "switch_thumb"
+    )
+
+    Box(
+        modifier = modifier
+            .width(42.dp)
+            .height(24.dp)
+            .shadow(4.dp, RoundedCornerShape(12.dp), spotColor = if (checked) Color(0x66EA580C) else Color(0x33000000))
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (checked) {
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFFFA7718), Color(0xFFD84E00))
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF20232E), Color(0xFF111319))
+                    )
+                }
+            )
+            .border(
+                1.dp,
+                if (checked) Color(0xFFFF9E58) else Color(0xFF33384B),
+                RoundedCornerShape(12.dp)
+            )
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 2.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(start = thumbOffset.dp)
+                .size(20.dp)
+                .shadow(3.dp, CircleShape, spotColor = Color(0x66000000))
+                .clip(CircleShape)
+                .background(
+                    if (checked) {
+                        Brush.radialGradient(
+                            listOf(Color(0xFFFFFFFF), Color(0xFFE2E4E8))
+                        )
+                    } else {
+                        Brush.radialGradient(
+                            listOf(Color(0xFFB0B7C6), Color(0xFF707686))
+                        )
+                    }
+                )
+                .border(
+                    0.5.dp,
+                    if (checked) Color(0xCCFFFFFF) else Color(0x44FFFFFF),
+                    CircleShape
+                )
+        )
+    }
+}
+
 @Composable
 private fun LeituraTabContent(
     isEn: Boolean,
@@ -771,265 +874,71 @@ private fun LeituraTabContent(
     val estimatedMinutes = if (wordCount > 0) ((wordCount / (150f * currentSpeed)).coerceAtLeast(1f)).toInt() else 5
     val estimatedSeconds = if (wordCount > 0) (wordCount % 60) else 32
 
+    val scrollState = rememberScrollState()
+    LaunchedEffect(Unit) {
+        scrollState.scrollTo(0)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // =========================================================================
-        // CARD 1: "ADICIONAR TEXTO" (MOLDURA COM BORDA TRACEJADA METÁLICA DO MOCKUP)
-        // =========================================================================
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(CardGradient)
-                .dashedBorder(1.2.dp, Color(0xFF4A5068), 18.dp, 8.dp, 5.dp)
-                .padding(vertical = 12.dp, horizontal = 14.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Ícone Central de Documento com Pequeno Badge Laranja "+"
-                Box(
-                    modifier = Modifier.size(42.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(SecondaryButtonGradient)
-                            .border(1.dp, BorderMetallic, RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Description,
-                            contentDescription = null,
-                            tint = Color(0xFFD4D7E2),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    // Badge circular de "+" no canto inferior direito
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .align(Alignment.BottomEnd)
-                            .clip(CircleShape)
-                            .background(OrangePrimary)
-                            .border(1.dp, Color(0xFF11131B), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "+",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = if (isEn) "Add text" else "Adicionar texto",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = if (isEn) "Paste text, drag a file here or choose a file." else "Cole um texto, arraste um arquivo aqui ou escolha um arquivo.",
-                    fontSize = 11.sp,
-                    color = Color(0xFF8E93A6),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 15.sp
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Linha com 4 Badges de Formatos: TXT, PDF, DOCX, MD (Cores fiéis ao mockup)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // TXT (Ciano)
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BadgeGradient)
-                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Description, contentDescription = null, tint = Color(0xFF00C2FF), modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("TXT", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC5C8D4))
-                    }
-
-                    // PDF (Vermelho)
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BadgeGradient)
-                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Description, contentDescription = null, tint = Color(0xFFFF4D4D), modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("PDF", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC5C8D4))
-                    }
-
-                    // DOCX (Azul)
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BadgeGradient)
-                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Description, contentDescription = null, tint = Color(0xFF2B7FFF), modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("DOCX", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC5C8D4))
-                    }
-
-                    // MD (Roxo)
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BadgeGradient)
-                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Description, contentDescription = null, tint = Color(0xFFA855F7), modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("MD", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC5C8D4))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Botão Metálico Prateado 3D Chanfrado: [ 📁 Escolher arquivo  ⌄ ]
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.78f)
-                        .height(44.dp)
-                        .shadow(10.dp, RoundedCornerShape(14.dp), spotColor = Color(0x77000000))
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MetallicButtonGradient)
-                        .border(1.dp, Color(0xAAFFFFFF), RoundedCornerShape(14.dp))
-                        .clickable { onChooseFileClick() }
-                        .padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FolderOpen,
-                            contentDescription = null,
-                            tint = Color(0xFF12141A),
-                            modifier = Modifier.size(17.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isEn) "Choose file" else "Escolher arquivo",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF12141A)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = Color(0xFF12141A),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        // =========================================================================
-        // CARD 2: "TEXTO OU LINK"
+        // SEÇÃO 1 (INVERTIDA PARA O TOPO): "TEXTO OU LINK"
+        // Mesma altura e formato da Seção 2, com degradê translúcido metálico fiel ao protótipo
         // =========================================================================
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF10121A)),
-            border = BorderStroke(1.dp, BorderMetallic)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(182.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            border = BorderStroke(1.dp, CardBorderBrush)
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Link,
-                        contentDescription = null,
-                        tint = Color(0xFFC5C8D4),
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (isEn) "Text or link" else "Texto ou link",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Campo Compacto Escuro com Placeholder e Botões Embutidos
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0C0E14))
-                        .border(1.dp, Color(0xFF222634), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(CardGlassGradient)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Linha de Cabeçalho: Título + Ações de Colar e Limpar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        BasicTextField(
-                            value = directInputText,
-                            onValueChange = onTextChanged,
-                            modifier = Modifier.weight(1f),
-                            textStyle = TextStyle(
-                                color = Color.White,
-                                fontSize = 12.sp
-                            ),
-                            maxLines = 2,
-                            decorationBox = { innerTextField ->
-                                if (directInputText.isEmpty()) {
-                                    Text(
-                                        text = if (isEn) "Paste text or link to listen..." else "Cole aqui o texto que deseja ouvir...",
-                                        color = Color(0xFF5A5F72),
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null,
+                                tint = OrangePrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isEn) "Text or link" else "Texto ou link",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
 
+                        // Botões de Ação com Acabamento Metálico
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            // Botão Colar
                             IconButton(
                                 onClick = onPasteClick,
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF1B1E2B))
+                                    .border(1.dp, Color(0xFF2E3345), RoundedCornerShape(8.dp))
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ContentPaste,
@@ -1038,11 +947,14 @@ private fun LeituraTabContent(
                                     modifier = Modifier.size(15.dp)
                                 )
                             }
-                            // Botão Limpar
                             if (directInputText.isNotEmpty()) {
                                 IconButton(
                                     onClick = onClearClick,
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF1B1E2B))
+                                    .border(1.dp, Color(0xFF2E3345), RoundedCornerShape(8.dp))
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Clear,
@@ -1054,52 +966,81 @@ private fun LeituraTabContent(
                             }
                         }
                     }
-                }
 
-                // Indicador de Link Web para Extração
-                if (directInputText.contains("http://") || directInputText.contains("https://")) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
+
+                    // Área de Entrada Confortável e Escura (Recessed Input Box)
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x22F97316))
-                            .border(1.dp, Color(0x44F97316), RoundedCornerShape(8.dp))
-                            .clickable { onReadWebLinkClick() }
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF07090E))
+                            .border(1.dp, Color(0xFF1C202C), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.Link, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (isEn) "Web link detected • Tap to extract article" else "Link web detectado • Toque para extrair notícia",
-                            fontSize = 11.sp,
-                            color = OrangePrimary,
-                            fontWeight = FontWeight.SemiBold
+                        BasicTextField(
+                            value = directInputText,
+                            onValueChange = onTextChanged,
+                            modifier = Modifier.fillMaxSize(),
+                            textStyle = TextStyle(
+                                color = Color.White,
+                                fontSize = 12.5.sp,
+                                lineHeight = 17.sp
+                            ),
+                            decorationBox = { innerTextField ->
+                                if (directInputText.isEmpty()) {
+                                    Text(
+                                        text = if (isEn) "Paste text or article link here to narrate..." else "Cole aqui o texto ou link que deseja ouvir...",
+                                        color = Color(0xFF5A5F72),
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
                         )
                     }
-                }
 
-                // Feedback de Processamento
-                AnimatedVisibility(visible = isProcessing || processingStatus != null) {
-                    Column {
-                        Spacer(modifier = Modifier.height(8.dp))
+                    // Feedback de Processamento ou Link Web Detectado
+                    if (directInputText.contains("http://") || directInputText.contains("https://")) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0x22F97316))
+                                .border(1.dp, Color(0x55F97316), RoundedCornerShape(8.dp))
+                                .clickable { onReadWebLinkClick() }
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Link, contentDescription = null, tint = OrangePrimary, modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isEn) "Web link detected • Tap to extract article" else "Link web detectado • Toque para extrair notícia",
+                                fontSize = 10.5.sp,
+                                color = OrangePrimary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    } else if (isProcessing || processingStatus != null) {
+                        Spacer(modifier = Modifier.height(6.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0xFF161924))
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             if (isProcessing) {
-                                CircularProgressIndicator(color = OrangePrimary, strokeWidth = 2.dp, modifier = Modifier.size(12.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
+                                CircularProgressIndicator(color = OrangePrimary, strokeWidth = 2.dp, modifier = Modifier.size(11.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                             } else {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(13.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(12.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                             }
-                            Text(text = processingStatus ?: "", fontSize = 11.sp, color = Color(0xFF8E93A6))
+                            Text(text = processingStatus ?: "", fontSize = 10.5.sp, color = Color(0xFF8E93A6))
                         }
                     }
                 }
@@ -1107,229 +1048,421 @@ private fun LeituraTabContent(
         }
 
         // =========================================================================
-        // CARD 3: "CONFIGURAÇÕES DE LEITURA"
+        // SEÇÃO 2: "ADICIONAR TEXTO" (MOLDURA TRACEJADA COM GRADIENTE METÁLICO)
+        // Mesma altura (182dp) da Seção 1, com moldura tracejada interna
+        // =========================================================================
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(182.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            border = BorderStroke(1.dp, CardBorderBrush)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(CardGlassGradient)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .dashedBorder(1.2.dp, Color(0xFF434B62), 16.dp, 8.dp, 5.dp)
+                        .padding(vertical = 10.dp, horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Ícone Central de Documento com Badge Laranja "+"
+                        Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(9.dp))
+                                    .background(SecondaryButtonGradient)
+                                    .border(1.dp, BorderMetallic, RoundedCornerShape(9.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD4D7E2),
+                                    modifier = Modifier.size(17.dp)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(13.dp)
+                                    .align(Alignment.BottomEnd)
+                                    .clip(CircleShape)
+                                    .background(OrangePrimary)
+                                    .border(1.dp, Color(0xFF11131B), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("+", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = if (isEn) "Add text" else "Adicionar texto",
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = if (isEn) "Paste text, drag a file here or choose a file." else "Cole um texto, arraste um arquivo aqui ou escolha um arquivo.",
+                            fontSize = 10.sp,
+                            color = Color(0xFF8E93A6),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Linha com 4 Badges de Formatos: TXT, PDF, DOCX, MD
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listOf(
+                                Triple("TXT", Color(0xFF00C2FF), Icons.Default.Description),
+                                Triple("PDF", Color(0xFFFF4D4D), Icons.Default.Description),
+                                Triple("DOCX", Color(0xFF2B7FFF), Icons.Default.Description),
+                                Triple("MD", Color(0xFFA855F7), Icons.Default.Description)
+                            ).forEach { (label, tintColor, icon) ->
+                                Row(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(BadgeGradient)
+                                        .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(icon, contentDescription = null, tint = tintColor, modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(label, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC5C8D4))
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Botão Metálico 3D Chanfrado: [ 📁 Escolher arquivo  ⌄ ]
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.78f)
+                                .height(38.dp)
+                                .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = Color(0x66000000))
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MetallicButtonGradient)
+                                .border(1.dp, Color(0xAAFFFFFF), RoundedCornerShape(12.dp))
+                                .clickable { onChooseFileClick() }
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FolderOpen,
+                                    contentDescription = null,
+                                    tint = Color(0xFF111319),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isEn) "Choose file" else "Escolher arquivo",
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF111319)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = Color(0xFF111319),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // =========================================================================
+        // SEÇÃO 3: "CONFIGURAÇÕES DE LEITURA"
+        // Fundo com degradê metálico translúcido e botões toggle com acabamento 3D GlossySwitch
         // =========================================================================
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF10121A)),
-            border = BorderStroke(1.dp, BorderMetallic)
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            border = BorderStroke(1.dp, CardBorderBrush)
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                // Título
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Tune,
-                        contentDescription = null,
-                        tint = Color(0xFFC5C8D4),
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (isEn) "Reading settings" else "Configurações de leitura",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Linha 1: Voz
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigateToVozTab() }
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(CardGlassGradient)
+                    .padding(14.dp)
+            ) {
+                Column {
+                    // Título da Seção
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Person,
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            tint = Color(0xFFC5C8D4),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isEn) "Reading settings" else "Configurações de leitura",
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Linha 1: Voz
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToVozTab() }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color(0xFF8E93A6),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = if (isEn) "Voice" else "Voz",
+                                fontSize = 12.sp,
+                                color = Color(0xFFD4D7E2)
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = voiceDisplayName,
+                                fontSize = 12.sp,
+                                color = Color(0xFF9AA0B2)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Color(0xFF9AA0B2),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
+
+                    // Linha Divisória Sutil
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF282D3D), Color.Transparent)))
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Linha 2: Velocidade
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
                             contentDescription = null,
                             tint = Color(0xFF8E93A6),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = if (isEn) "Voice" else "Voz",
+                            text = if (isEn) "Speed" else "Velocidade",
                             fontSize = 12.sp,
                             color = Color(0xFFD4D7E2)
                         )
-                    }
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = voiceDisplayName,
-                            fontSize = 12.sp,
-                            color = Color(0xFF9AA0B2)
+                        Slider(
+                            value = currentSpeed,
+                            onValueChange = onSpeedChanged,
+                            valueRange = 0.5f..2.5f,
+                            steps = 19,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(22.dp),
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color.White,
+                                activeTrackColor = OrangePrimary,
+                                inactiveTrackColor = Color(0xFF222634)
+                            )
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = Color(0xFF9AA0B2),
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                // Linha 2: Velocidade com Slider Fino e Indicador
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Speed,
-                        contentDescription = null,
-                        tint = Color(0xFF8E93A6),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = if (isEn) "Speed" else "Velocidade",
-                        fontSize = 12.sp,
-                        color = Color(0xFFD4D7E2)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Slider(
-                        value = currentSpeed,
-                        onValueChange = onSpeedChanged,
-                        valueRange = 0.5f..2.5f,
-                        steps = 19,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(24.dp),
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = OrangePrimary,
-                            inactiveTrackColor = Color(0xFF222634)
-                        )
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { onNavigateToVozTab() }
-                    ) {
-                        Text(
-                            text = String.format(Locale.US, "%.1f×", currentSpeed),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF9AA0B2)
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = Color(0xFF9AA0B2),
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Linha 3: Dois Cards Lado a Lado (Destacar Texto & Modo Foco)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Card A: Destacar texto em leitura
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF151822))
-                            .border(1.dp, Color(0xFF242838), RoundedCornerShape(12.dp))
-                            .clickable { onHighlightChanged(!highlightInReading) }
-                            .padding(horizontal = 10.dp, vertical = 8.dp)
-                    ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier.clickable { onNavigateToVozTab() }
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(26.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color(0xFF1E2230)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("A", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                }
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (isEn) "Highlight in reading" else "Destacar texto em leitura",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFFD4D7E2),
-                                    lineHeight = 12.sp
-                                )
-                            }
-                            Switch(
-                                checked = highlightInReading,
-                                onCheckedChange = onHighlightChanged,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = OrangePrimary,
-                                    uncheckedThumbColor = Color(0xFF8E93A6),
-                                    uncheckedTrackColor = Color(0xFF242838)
-                                ),
-                                modifier = Modifier.scale(0.72f)
+                            Text(
+                                text = String.format(Locale.US, "%.1f×", currentSpeed),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF9AA0B2)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = Color(0xFF9AA0B2),
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                     }
 
-                    // Card B: Modo foco (leitura imersiva)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF151822))
-                            .border(1.dp, Color(0xFF242838), RoundedCornerShape(12.dp))
-                            .clickable { focusMode = !focusMode }
-                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Linha 3: Dois Cards Lado a Lado com Acabamento 3D em Relevo (ToggleCardGradient) e GlossySwitch
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        // Card A: Destacar texto em leitura
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(58.dp)
+                                .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = Color(0x55000000))
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(ToggleCardGradient)
+                                .border(1.dp, ToggleBorderBrush, RoundedCornerShape(12.dp))
+                                .clickable { onHighlightChanged(!highlightInReading) }
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(26.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color(0xFF1E2230)),
-                                    contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Icon(Icons.Default.CropFree, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(Color(0xFF1B1E29))
+                                            .border(1.dp, Color(0xFF33384B), RoundedCornerShape(7.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "A",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = if (isEn) "Highlight text" else "Destacar texto",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = if (isEn) "in reading" else "em leitura",
+                                            fontSize = 9.sp,
+                                            color = Color(0xFF9AA0B2)
+                                        )
+                                    }
                                 }
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (isEn) "Focus mode (immersive)" else "Modo foco (leitura imersiva)",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFFD4D7E2),
-                                    lineHeight = 12.sp
+                                GlossySwitch(
+                                    checked = highlightInReading,
+                                    onCheckedChange = onHighlightChanged
                                 )
                             }
-                            Switch(
-                                checked = focusMode,
-                                onCheckedChange = { focusMode = it },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = OrangePrimary,
-                                    uncheckedThumbColor = Color(0xFF8E93A6),
-                                    uncheckedTrackColor = Color(0xFF242838)
-                                ),
-                                modifier = Modifier.scale(0.72f)
-                            )
+                        }
+
+                        // Card B: Modo foco (leitura imersiva)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(58.dp)
+                                .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = Color(0x55000000))
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(ToggleCardGradient)
+                                .border(1.dp, ToggleBorderBrush, RoundedCornerShape(12.dp))
+                                .clickable { focusMode = !focusMode }
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(Color(0xFF1B1E29))
+                                            .border(1.dp, Color(0xFF33384B), RoundedCornerShape(7.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CropFree,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = if (isEn) "Focus mode" else "Modo foco",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = if (isEn) "(immersive reading)" else "(leitura imersiva)",
+                                            fontSize = 9.sp,
+                                            color = Color(0xFF9AA0B2)
+                                        )
+                                    }
+                                }
+                                GlossySwitch(
+                                    checked = focusMode,
+                                    onCheckedChange = { focusMode = it }
+                                )
+                            }
                         }
                     }
                 }
@@ -1337,12 +1470,12 @@ private fun LeituraTabContent(
         }
 
         // =========================================================================
-        // CARD 4 / PLAYER PROEMINENTE (BOTÃO CIRCULAR LARANJA DOMINANTE + ONDAS)
+        // SEÇÃO 4 / PLAYER PROEMINENTE (BOTÃO CIRCULAR LARANJA DOMINANTE + ONDAS)
         // =========================================================================
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp, bottom = 12.dp),
+                .padding(top = 2.dp, bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Ondas Sonoras Dinâmicas durante reprodução (Asset ic_readtome_waves)
@@ -1444,7 +1577,7 @@ private fun LeituraTabContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Barra de Progresso Fina: 00:00 ━━━━━━●───────── 05:32
             Row(
@@ -1497,75 +1630,81 @@ private fun LeituraTabContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Card Inferior do Documento Atual: [ 📄 ] Plano Concilia – Proposta v2 ...
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF141620)),
-                border = BorderStroke(1.dp, Color(0xFF242838))
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                border = BorderStroke(1.dp, CardBorderBrush)
             ) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(CardGlassGradient)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF1D212E))
-                                .border(1.dp, Color(0xFF2E3448), RoundedCornerShape(10.dp)),
-                            contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFF1D212E))
+                                    .border(1.dp, Color(0xFF2E3448), RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Description,
+                                    contentDescription = null,
+                                    tint = Color(0xFFC5C8D4),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Column {
+                                Text(
+                                    text = activeDocumentTitle.ifBlank { "Plano Concilia – Proposta v2" },
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (directInputText.isBlank()) "5 min 32 s • TXT" else "$wordCount ${if (isEn) "words" else "palavras"} • ${estimatedMinutes} min • TXT",
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF8E93A6)
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = { /* mais opções */ },
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Description,
-                                contentDescription = null,
-                                tint = Color(0xFFC5C8D4),
+                                imageVector = Icons.Default.MoreHoriz,
+                                contentDescription = "Opções",
+                                tint = Color(0xFF8E93A6),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Column {
-                            Text(
-                                text = activeDocumentTitle.ifBlank { "Plano Concilia – Proposta v2" },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (directInputText.isBlank()) "5 min 32 s • TXT" else "$wordCount ${if (isEn) "words" else "palavras"} • ${estimatedMinutes} min • TXT",
-                                fontSize = 10.sp,
-                                color = Color(0xFF8E93A6)
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = { /* mais opções */ },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreHoriz,
-                            contentDescription = "Opções",
-                            tint = Color(0xFF8E93A6),
-                            modifier = Modifier.size(18.dp)
-                        )
                     }
                 }
             }
         }
     }
 }
+
 
 
 // =========================================================================
