@@ -491,18 +491,20 @@ fun ReadToMeStudioScreen() {
                     )
                 }
 
-                // Lado Direito: Ilustração 3D Oficial Grande e Destacada + Botão de Ajustes
+                // Lado Direito: Novo Ícone 3D Oficial (Microfone Titânio + Ondas Laranja) + Botão de Ajustes
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_readtome_hero),
-                        contentDescription = "ReadToMe 3D Hero",
+                        contentDescription = "ReadToMe 3D Studio Icon",
                         modifier = Modifier
-                            .height(80.dp)
-                            .width(112.dp),
-                        contentScale = ContentScale.Fit
+                            .size(60.dp)
+                            .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0x88000000))
+                            .clip(RoundedCornerShape(16.dp))
+                            .border(1.2.dp, Color(0xFF454E66), RoundedCornerShape(16.dp)),
+                        contentScale = ContentScale.Crop
                     )
 
                     // Botão Metálico Circular de Ajustes
@@ -888,12 +890,12 @@ private fun LeituraTabContent(
     ) {
         // =========================================================================
         // SEÇÃO 1 (INVERTIDA PARA O TOPO): "TEXTO OU LINK"
-        // Mesma altura e formato da Seção 2, com degradê translúcido metálico fiel ao protótipo
+        // Destaque prioritário para colar e ler texto imediatamente
         // =========================================================================
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(182.dp),
+                .height(204.dp),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             border = BorderStroke(1.dp, CardBorderBrush)
@@ -979,26 +981,50 @@ private fun LeituraTabContent(
                             .border(1.dp, Color(0xFF1C202C), RoundedCornerShape(12.dp))
                             .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
-                        BasicTextField(
-                            value = directInputText,
-                            onValueChange = onTextChanged,
-                            modifier = Modifier.fillMaxSize(),
-                            textStyle = TextStyle(
-                                color = Color.White,
-                                fontSize = 12.5.sp,
-                                lineHeight = 17.sp
-                            ),
-                            decorationBox = { innerTextField ->
-                                if (directInputText.isEmpty()) {
-                                    Text(
-                                        text = if (isEn) "Paste text or article link here to narrate..." else "Cole aqui o texto ou link que deseja ouvir...",
-                                        color = Color(0xFF5A5F72),
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                innerTextField()
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                                BasicTextField(
+                                    value = directInputText,
+                                    onValueChange = onTextChanged,
+                                    modifier = Modifier.fillMaxSize(),
+                                    textStyle = TextStyle(
+                                        color = Color.White,
+                                        fontSize = 12.5.sp,
+                                        lineHeight = 17.sp
+                                    ),
+                                    decorationBox = { innerTextField ->
+                                        if (directInputText.isEmpty()) {
+                                            Text(
+                                                text = if (isEn) "Paste text or article link here to narrate..." else "Cole aqui o texto ou link que deseja ouvir...",
+                                                color = Color(0xFF5A5F72),
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                )
                             }
-                        )
+                            
+                            // Linha de métricas: contador de palavras e tempo estimado
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (wordCount > 0) "$wordCount ${if (isEn) "words" else "palavras"} • ~$estimatedMinutes min" else (if (isEn) "0 words • ~0 min" else "0 palavras • ~0 min"),
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF6B7280)
+                                )
+                                Text(
+                                    text = activeDocumentTitle.ifBlank { "Texto Direto" },
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF8E93A6)
+                                )
+                            }
+                        }
                     }
 
                     // Feedback de Processamento ou Link Web Detectado
