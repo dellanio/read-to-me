@@ -19,15 +19,17 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.readtome.app.R
 import com.readtome.app.audio.PlaybackState
 import com.readtome.app.audio.TtsEngine
 import kotlin.math.abs
 
 /**
- * Botão flutuante inteligente com Mini-Player totalmente interativo:
- * - Modo Compacto: Círculo de 56dp com detecção de toque para selecionar área.
- * - Modo Mini-Player: Barra de controles com Play/Pause, Stop, Velocidade e Fechar (X).
- * - Suporte a arrasto suave e Snap-to-Edge nas laterais.
+ * Botão flutuante inteligente com Mini-Player integrado no estilo ReadToMe Studio:
+ * - Modo Compacto: Círculo de 58dp com borda neon laranja e ícone metálico 3D.
+ * - Modo Mini-Player: Barra de controles (Play/Pause, Stop, Velocidade e Recolher).
+ * - Arrastável com snap suave para a borda da tela.
+ * - O botão [X] no mini-player apenas pausa/interrompe o áudio e volta ao modo ícone flutuante.
  */
 @SuppressLint("ViewConstructor")
 class FloatingBubbleView(
@@ -42,8 +44,8 @@ class FloatingBubbleView(
         private const val TAG = "FloatingBubbleView"
     }
 
-    private val compactSize = dpToPx(56)
-    private val expandedWidth = dpToPx(240)
+    private val compactSize = dpToPx(58)
+    private val expandedWidth = dpToPx(250)
 
     val layoutParams = WindowManager.LayoutParams().apply {
         type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
@@ -53,8 +55,8 @@ class FloatingBubbleView(
         gravity = Gravity.TOP or Gravity.START
         width = compactSize
         height = compactSize
-        x = 50
-        y = 350
+        x = dpToPx(16)
+        y = dpToPx(200)
     }
 
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
@@ -77,21 +79,22 @@ class FloatingBubbleView(
     init {
         val backgroundDrawable = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = dpToPx(28).toFloat()
-            setColor(Color.parseColor("#0F172A"))
-            setStroke(dpToPx(2), Color.parseColor("#38BDF8"))
+            cornerRadius = dpToPx(29).toFloat()
+            setColor(Color.parseColor("#18181B")) // Dark Obsidian
+            setStroke(dpToPx(2), Color.parseColor("#FF5722")) // Orange Primary Accent
         }
 
         bubbleContainer = FrameLayout(context).apply {
             background = backgroundDrawable
-            elevation = dpToPx(10).toFloat()
+            elevation = dpToPx(12).toFloat()
         }
 
-        // Ícone em modo ocioso (Tela 3D + Microfone)
+        // Ícone em modo ocioso (Novo Logo 3D Studio ReadToMe)
         idleIcon = ImageView(context).apply {
-            setImageResource(com.readtome.app.R.drawable.ic_readtome_3d)
-            val pad = dpToPx(8)
+            setImageResource(R.drawable.ic_readtome_logo)
+            val pad = dpToPx(7)
             setPadding(pad, pad, pad, pad)
+            scaleType = ImageView.ScaleType.FIT_CENTER
         }
         bubbleContainer.addView(idleIcon, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 
@@ -100,20 +103,24 @@ class FloatingBubbleView(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             visibility = View.GONE
-            val padH = dpToPx(8)
+            val padH = dpToPx(10)
             setPadding(padH, 0, padH, 0)
         }
 
-        // Botão Play/Pause (40x40dp com área de toque acessível)
+        // Botão Play/Pause (Círculo Laranja com ícone branco)
         playPauseBtn = ImageView(context).apply {
             setImageResource(android.R.drawable.ic_media_pause)
             setColorFilter(Color.WHITE)
             isClickable = true
             isFocusable = true
-            val p = dpToPx(6)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#FF5722"))
+            }
+            val p = dpToPx(8)
             setPadding(p, p, p, p)
             setOnClickListener {
-                Log.d(TAG, "Clique no botão Play/Pause")
+                Log.d(TAG, "Clique no botão Play/Pause do MiniPlayer")
                 val state = ttsEngine.playbackState.value
                 if (state is PlaybackState.Playing) {
                     ttsEngine.pause()
@@ -124,33 +131,44 @@ class FloatingBubbleView(
         }
         playerLayout.addView(playPauseBtn, LinearLayout.LayoutParams(dpToPx(40), dpToPx(40)))
 
-        // Botão Stop (Para a fala e volta ao modo normal)
+        // Botão Stop
         stopBtn = ImageView(context).apply {
             setImageResource(android.R.drawable.ic_media_previous)
-            setColorFilter(Color.WHITE)
+            setColorFilter(Color.parseColor("#E0E0E0"))
             isClickable = true
             isFocusable = true
-            val p = dpToPx(7)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#27272A"))
+                setStroke(dpToPx(1), Color.parseColor("#3F3F46"))
+            }
+            val p = dpToPx(8)
             setPadding(p, p, p, p)
             setOnClickListener {
-                Log.d(TAG, "Clique no botão Stop")
+                Log.d(TAG, "Clique no botão Stop do MiniPlayer")
                 ttsEngine.stop()
+                setMiniPlayerVisible(false)
             }
         }
         val stopParams = LinearLayout.LayoutParams(dpToPx(40), dpToPx(40)).apply {
-            marginStart = dpToPx(4)
+            marginStart = dpToPx(8)
         }
         playerLayout.addView(stopBtn, stopParams)
 
         // Botão de Velocidade (1.0x / 1.5x / 2.0x)
         speedBtn = TextView(context).apply {
             text = "1.0x"
-            setTextColor(Color.WHITE)
+            setTextColor(Color.parseColor("#FF9800"))
             textSize = 12f
             gravity = Gravity.CENTER
             isClickable = true
             isFocusable = true
-            setBackgroundResource(android.R.drawable.editbox_background_normal)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dpToPx(16).toFloat()
+                setColor(Color.parseColor("#27272A"))
+                setStroke(dpToPx(1), Color.parseColor("#FF5722"))
+            }
             setOnClickListener {
                 val current = ttsEngine.currentSpeed
                 val next = when {
@@ -162,27 +180,32 @@ class FloatingBubbleView(
                 ttsEngine.setPlaybackSpeed(next)
             }
         }
-        val speedParams = LinearLayout.LayoutParams(dpToPx(44), dpToPx(32)).apply {
-            marginStart = dpToPx(4)
+        val speedParams = LinearLayout.LayoutParams(dpToPx(46), dpToPx(34)).apply {
+            marginStart = dpToPx(8)
         }
         playerLayout.addView(speedBtn, speedParams)
 
-        // Botão Fechar (X)
+        // Botão Fechar/Recolher (X): Para o áudio e volta ao ícone circular (sem remover da tela)
         closeBtn = ImageView(context).apply {
             setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            setColorFilter(Color.WHITE)
+            setColorFilter(Color.parseColor("#EF4444"))
             isClickable = true
             isFocusable = true
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#27272A"))
+                setStroke(dpToPx(1), Color.parseColor("#3F3F46"))
+            }
             val p = dpToPx(8)
             setPadding(p, p, p, p)
             setOnClickListener {
-                Log.d(TAG, "Clique no botão Fechar")
+                Log.d(TAG, "Clique no botão Fechar: Interrompendo reprodução e recolhendo ao botão flutuante")
                 ttsEngine.stop()
-                onCloseRequested()
+                setMiniPlayerVisible(false)
             }
         }
         val closeParams = LinearLayout.LayoutParams(dpToPx(40), dpToPx(40)).apply {
-            marginStart = dpToPx(4)
+            marginStart = dpToPx(8)
         }
         playerLayout.addView(closeBtn, closeParams)
 
@@ -228,8 +251,14 @@ class FloatingBubbleView(
             duration = 200
             interpolator = DecelerateInterpolator()
             addUpdateListener { anim ->
-                layoutParams.width = anim.animatedValue as Int
-                windowManager.updateViewLayout(this@FloatingBubbleView, layoutParams)
+                if (isAttachedToWindow) {
+                    layoutParams.width = anim.animatedValue as Int
+                    try {
+                        windowManager.updateViewLayout(this@FloatingBubbleView, layoutParams)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Erro ao animar MiniPlayer", e)
+                    }
+                }
             }
             start()
         }
@@ -252,7 +281,7 @@ class FloatingBubbleView(
                 initialTouchX = ev.rawX
                 initialTouchY = ev.rawY
                 isDragging = false
-                // Em modo compacto, intercepta sempre para capturar o toque
+                // Em modo compacto, intercepta sempre para capturar toque ou arrasto
                 return !isMiniPlayerMode
             }
             MotionEvent.ACTION_MOVE -> {
@@ -260,7 +289,7 @@ class FloatingBubbleView(
                 val dy = abs(ev.rawY - initialTouchY)
                 if (dx > touchSlop || dy > touchSlop) {
                     isDragging = true
-                    return true // Intercepta para arrastar mesmo com os botões ativos
+                    return true
                 }
             }
         }
@@ -286,21 +315,35 @@ class FloatingBubbleView(
                     isDragging = true
                 }
 
-                if (isDragging) {
-                    layoutParams.x = initialX + dx
-                    layoutParams.y = initialY + dy
-                    windowManager.updateViewLayout(this, layoutParams)
+                if (isDragging && isAttachedToWindow) {
+                    val screenW = getRealScreenWidth()
+                    val screenH = getRealScreenHeight()
+                    val newX = (initialX + dx).coerceIn(0, screenW - layoutParams.width)
+                    val newY = (initialY + dy).coerceIn(dpToPx(40), screenH - layoutParams.height - dpToPx(40))
+
+                    layoutParams.x = newX
+                    layoutParams.y = newY
+                    try {
+                        windowManager.updateViewLayout(this, layoutParams)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Erro ao arrastar FloatingBubble", e)
+                    }
                 }
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                if (!isDragging) {
+                val dx = abs(event.rawX - initialTouchX)
+                val dy = abs(event.rawY - initialTouchY)
+
+                if (!isDragging && dx < touchSlop && dy < touchSlop) {
                     if (!isMiniPlayerMode) {
+                        Log.i(TAG, "Toque confirmado no botão flutuante. Acionando overlay de leitura.")
                         onBubbleClicked()
                     }
                 } else {
                     animateSnapToEdge()
                 }
+                isDragging = false
                 return true
             }
         }
@@ -308,6 +351,7 @@ class FloatingBubbleView(
     }
 
     private fun animateSnapToEdge() {
+        if (!isAttachedToWindow) return
         val screenWidth = getRealScreenWidth()
         val currentW = layoutParams.width
         val margin = dpToPx(12)
@@ -319,11 +363,17 @@ class FloatingBubbleView(
         }
 
         ValueAnimator.ofInt(layoutParams.x, targetX).apply {
-            duration = 250
+            duration = 220
             interpolator = DecelerateInterpolator()
             addUpdateListener { animation ->
-                layoutParams.x = animation.animatedValue as Int
-                windowManager.updateViewLayout(this@FloatingBubbleView, layoutParams)
+                if (isAttachedToWindow) {
+                    layoutParams.x = animation.animatedValue as Int
+                    try {
+                        windowManager.updateViewLayout(this@FloatingBubbleView, layoutParams)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Erro ao realizar snap na borda", e)
+                    }
+                }
             }
             start()
         }
@@ -337,6 +387,17 @@ class FloatingBubbleView(
             @Suppress("DEPRECATION")
             windowManager.defaultDisplay.getRealSize(point)
             point.x
+        }
+    }
+
+    private fun getRealScreenHeight(): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.currentWindowMetrics.bounds.height()
+        } else {
+            val point = Point()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealSize(point)
+            point.y
         }
     }
 

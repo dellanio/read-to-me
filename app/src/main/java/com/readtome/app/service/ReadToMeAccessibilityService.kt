@@ -12,6 +12,7 @@ import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.common.InputImage
@@ -30,9 +31,9 @@ import kotlinx.coroutines.launch
 /**
  * Serviço central do ReadToMe:
  * - Exibe e controla o botão flutuante e overlay de seleção.
- * - Prioridade 1: Extrai nós estruturados de texto via AccessibilityNodeInfo.
+ * - Prioridade 1: Extrai nós estruturados de texto via AccessibilityNodeInfo (janela ativa e todas as janelas do sistema).
  * - Prioridade 2: Fallback transparente via takeScreenshot() + Google ML Kit OCR.
- * - Sanitização opcional com Gemini e reprodução via TtsEngine com mini-player.
+ * - Sanitização opcional com Gemini e reprodução via TtsEngine com mini-player flutuante.
  */
 class ReadToMeAccessibilityService : AccessibilityService() {
 
@@ -126,16 +127,19 @@ class ReadToMeAccessibilityService : AccessibilityService() {
                     windowManager = windowManager,
                     ttsEngine = app.ttsEngine,
                     onCloseRequested = {
-                        removeFloatingBubble()
+                        // Não remove do WindowManager ao fechar reprodução; apenas recolhe
+                        Log.d(TAG, "Solicitação de recolhimento do mini player")
                     }
                 ) {
                     openSelectionOverlay()
                 }
                 windowManager.addView(floatingBubbleView, floatingBubbleView?.layoutParams)
                 Log.i(TAG, "FloatingBubbleView adicionada com sucesso ao WindowManager.")
+            } else {
+                floatingBubbleView?.visibility = View.VISIBLE
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Erro ao adicionar FloatingBubbleView", e)
+            Log.e(TAG, "Erro ao configurar FloatingBubbleView", e)
         }
     }
 
@@ -150,7 +154,9 @@ class ReadToMeAccessibilityService : AccessibilityService() {
     private fun removeFloatingBubble() {
         try {
             floatingBubbleView?.let {
-                windowManager.removeView(it)
+                if (it.isAttachedToWindow) {
+                    windowManager.removeView(it)
+                }
                 floatingBubbleView = null
             }
         } catch (e: Exception) {
@@ -178,15 +184,25 @@ class ReadToMeAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao abrir SelectionOverlayView", e)
             floatingBubbleView?.visibility = View.VISIBLE
+            isProcessingSelection = false
         }
     }
 
     private fun closeSelectionOverlay() {
-        selectionOverlayView?.let {
-            windowManager.removeView(it)
+        try {
+            selectionOverlayView?.let {
+                if (it.isAttachedToWindow) {
+                    windowManager.removeView(it)
+                }
+                selectionOverlayView = null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Erro ao fechar SelectionOverlayView", e)
+        } finally {
             selectionOverlayView = null
+            floatingBubbleView?.visibility = View.VISIBLE
+            isProcessingSelection = false
         }
-        floatingBubbleView?.visibility = View.VISIBLE
     }
 
     // =========================================================================
@@ -201,7 +217,7 @@ class ReadToMeAccessibilityService : AccessibilityService() {
         isProcessingSelection = true
 
         try {
-            // Interrompe imediatamente qualquer áudio anterior para evitar sobreposição de vozes
+            // Interrompe qualquer áudio anterior
             ReadToMeApp.instance.ttsEngine.stop()
 
             // Prioridade 1: Buscar nós nativos de texto dentro da área selecionada
@@ -215,11 +231,12 @@ class ReadToMeAccessibilityService : AccessibilityService() {
             }
 
             // Prioridade 2: Fallback para Screenshot + OCR (API 30+)
-            Log.d(TAG, "Nenhum nó de texto encontrado. Acionando Fallback OCR...")
+            Log.d(TAG, "Nenhum nó de texto nativo encontrado. Acionando Fallback OCR...")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 captureScreenshotAndOcr(selectedRect)
             } else {
                 Log.e(TAG, "Fallback de screenshot requer Android 11+ (API 30).")
+                Toast.makeText(this, "Nenhum texto acessível encontrado.", Toast.LENGTH_SHORT).show()
                 closeSelectionOverlay()
                 isProcessingSelection = false
             }
@@ -231,8 +248,8 @@ class ReadToMeAccessibilityService : AccessibilityService() {
     }
 
     private fun extractTextFromAccessibilityNodes(selectedRect: Rect): String {
-        val root = rootInActiveWindow ?: return ""
         val collectedNodes = mutableListOf<Pair<Rect, CharSequence>>()
+        val visitedRoots = mutableSetOf<AccessibilityNodeInfo>()
 
         fun traverse(node: AccessibilityNodeInfo?) {
             if (node == null || !node.isVisibleToUser) return
@@ -252,7 +269,23 @@ class ReadToMeAccessibilityService : AccessibilityService() {
             }
         }
 
-        traverse(root)
+        // 1. Tenta a janela ativa principal
+        rootInActiveWindow?.let { root ->
+            visitedRoots.add(root)
+            traverse(root)
+        }
+
+        // 2. Explora todas as demais janelas interativas do sistema
+        try {
+            for (window in windows) {
+                val root = window.root
+                if (root != null && visitedRoots.add(root)) {
+                    traverse(root)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Erro ao iterar windows de acessibilidade", e)
+        }
 
         // Ordena espacialmente (top-to-bottom, left-to-right) para fluxo natural de leitura
         collectedNodes.sortWith(compareBy({ it.first.top }, { it.first.left }))
@@ -284,9 +317,11 @@ class ReadToMeAccessibilityService : AccessibilityService() {
                                 processCroppedBitmapWithOcr(softwareBitmap, selectedRect)
                             } else {
                                 Log.e(TAG, "Falha ao converter HardwareBuffer em Software Bitmap.")
+                                isProcessingSelection = false
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "Erro no processamento do screenshot", e)
+                            isProcessingSelection = false
                         } finally {
                             closeSelectionOverlay()
                         }
@@ -294,7 +329,9 @@ class ReadToMeAccessibilityService : AccessibilityService() {
 
                     override fun onFailure(errorCode: Int) {
                         Log.e(TAG, "takeScreenshot falhou com código: $errorCode")
+                        Toast.makeText(this@ReadToMeAccessibilityService, "Não foi possível capturar a tela.", Toast.LENGTH_SHORT).show()
                         closeSelectionOverlay()
+                        isProcessingSelection = false
                     }
                 }
             )
@@ -309,6 +346,7 @@ class ReadToMeAccessibilityService : AccessibilityService() {
 
         if (safeWidth <= 0 || safeHeight <= 0) {
             Log.w(TAG, "Dimensões de corte inválidas após clamping.")
+            isProcessingSelection = false
             return
         }
 
@@ -323,10 +361,14 @@ class ReadToMeAccessibilityService : AccessibilityService() {
                     dispatchTextToPipeline(detectedText)
                 } else {
                     Log.w(TAG, "OCR não detectou nenhum texto na área recortada.")
+                    Toast.makeText(this, "Nenhum texto identificado nesta área.", Toast.LENGTH_SHORT).show()
+                    isProcessingSelection = false
                 }
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Falha no reconhecimento de texto do ML Kit", e)
+                Toast.makeText(this, "Erro no reconhecimento de texto.", Toast.LENGTH_SHORT).show()
+                isProcessingSelection = false
             }
     }
 
@@ -339,6 +381,7 @@ class ReadToMeAccessibilityService : AccessibilityService() {
 
         serviceScope.launch {
             try {
+                Toast.makeText(this@ReadToMeAccessibilityService, "Lendo texto da tela...", Toast.LENGTH_SHORT).show()
                 val textToRead = if (prefs.isAiCleaningEnabled && prefs.geminiApiKey.isNotBlank()) {
                     val cleanResult = GeminiTextProcessor.cleanOcrText(rawText, prefs.geminiApiKey)
                     cleanResult.getOrDefault(rawText)

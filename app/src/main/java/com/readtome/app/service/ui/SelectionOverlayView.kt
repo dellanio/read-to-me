@@ -80,11 +80,11 @@ class SelectionOverlayView(
         xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     }
 
-    // Linha tracejada neon ciano
+    // Linha tracejada neon laranja vibrante
     private val dashedBorderPaint = Paint().apply {
-        color = 0xFF38BDF8.toInt()
+        color = 0xFFFF5722.toInt()
         style = Paint.Style.STROKE
-        strokeWidth = 5f
+        strokeWidth = 6f
         isAntiAlias = true
         pathEffect = DashPathEffect(floatArrayOf(28f, 16f), 0f)
     }
@@ -93,48 +93,48 @@ class SelectionOverlayView(
     private val dashedShadowPaint = Paint().apply {
         color = 0xCC000000.toInt()
         style = Paint.Style.STROKE
-        strokeWidth = 9f
+        strokeWidth = 10f
         isAntiAlias = true
         pathEffect = DashPathEffect(floatArrayOf(28f, 16f), 0f)
     }
 
-    // Cantos destacados (L-brackets nos vértices)
+    // Cantos destacados (L-brackets metálicos laranja)
     private val cornerBracketPaint = Paint().apply {
-        color = 0xFF38BDF8.toInt()
+        color = 0xFFFF7043.toInt()
         style = Paint.Style.STROKE
-        strokeWidth = 8f
+        strokeWidth = 9f
         isAntiAlias = true
         strokeCap = Paint.Cap.ROUND
     }
 
     // Textos e HUD
     private val pillBackgroundPaint = Paint().apply {
-        color = 0xDD0F172A.toInt() // Dark Slate translúcido
+        color = 0xEE18181B.toInt() // Dark Obsidian translúcido
         style = Paint.Style.FILL
         isAntiAlias = true
     }
 
     private val pillBorderPaint = Paint().apply {
-        color = 0xFF38BDF8.toInt()
+        color = 0xFFFF5722.toInt()
         style = Paint.Style.STROKE
-        strokeWidth = 2f
+        strokeWidth = 2.5f
         isAntiAlias = true
     }
 
     private val buttonPlayPaint = Paint().apply {
-        color = 0xFF2563EB.toInt() // Azul Royal / Ação principal
+        color = 0xFFFF5722.toInt() // Laranja Studio / Ação principal
         style = Paint.Style.FILL
         isAntiAlias = true
     }
 
     private val buttonResetPaint = Paint().apply {
-        color = 0xFF1E293B.toInt()
+        color = 0xFF27272A.toInt()
         style = Paint.Style.FILL
         isAntiAlias = true
     }
 
     private val buttonBorderPaint = Paint().apply {
-        color = 0xFF475569.toInt()
+        color = 0xFF3F3F46.toInt()
         style = Paint.Style.STROKE
         strokeWidth = 2f
         isAntiAlias = true

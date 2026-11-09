@@ -299,6 +299,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val app = application as? ReadToMeApp
+        if (app?.preferences?.isFloatingBubbleEnabled == true && isAccessibilityServiceEnabled(this)) {
+            ReadToMeAccessibilityService.instance?.updateBubbleVisibility()
+        }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -312,6 +320,26 @@ class MainActivity : ComponentActivity() {
             app.ttsEngine.speak(speakText, app.preferences.playbackSpeed)
         }
     }
+}
+
+/**
+ * Verifica com precisao se o servico de acessibilidade do ReadToMe esta ativo no Android.
+ */
+fun isAccessibilityServiceEnabled(context: Context): Boolean {
+    val expected = android.content.ComponentName(context, ReadToMeAccessibilityService::class.java)
+    val enabledServices = Settings.Secure.getString(
+        context.contentResolver,
+        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+    ) ?: return false
+    val splitter = TextUtils.SimpleStringSplitter(':')
+    splitter.setString(enabledServices)
+    while (splitter.hasNext()) {
+        val component = android.content.ComponentName.unflattenFromString(splitter.next())
+        if (component != null && component == expected) {
+            return true
+        }
+    }
+    return false
 }
 
 @Composable
@@ -730,10 +758,25 @@ fun ReadToMeStudioScreen() {
                             Toast.makeText(context, if (isEn) "Gemini key saved!" else "Chave do Gemini salva com sucesso!", Toast.LENGTH_SHORT).show()
                         },
                         isFloatingBubbleEnabled = isFloatingBubbleEnabled,
-                        onFloatingBubbleChanged = {
-                            isFloatingBubbleEnabled = it
-                            prefs.isFloatingBubbleEnabled = it
-                            ReadToMeAccessibilityService.instance?.updateBubbleVisibility()
+                        onFloatingBubbleChanged = { enabled ->
+                            isFloatingBubbleEnabled = enabled
+                            prefs.isFloatingBubbleEnabled = enabled
+                            if (enabled) {
+                                if (isAccessibilityServiceEnabled(context)) {
+                                    ReadToMeAccessibilityService.instance?.updateBubbleVisibility()
+                                    Toast.makeText(context, if (isEn) "Floating button active!" else "Botão flutuante ativado com sucesso!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, if (isEn) "Enable ReadToMe under Installed Apps in Accessibility Settings." else "Ative o ReadToMe em Aplicativos Instalados na Acessibilidade.", Toast.LENGTH_LONG).show()
+                                    try {
+                                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                    } catch (e: Exception) {
+                                        // ignore
+                                    }
+                                }
+                            } else {
+                                ReadToMeAccessibilityService.instance?.updateBubbleVisibility()
+                                Toast.makeText(context, if (isEn) "Floating button disabled." else "Botão flutuante desativado.", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     )
                 }
@@ -2600,43 +2643,86 @@ private fun AjustesTabContent(
         }
 
         // PREFERÊNCIAS DE INTERFACE (BOTÃO FLUTUANTE)
+        val isServiceActive = remember(isFloatingBubbleEnabled) { isAccessibilityServiceEnabled(context) }
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = SurfaceCard),
             border = BorderStroke(1.dp, BorderSubtle)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onFloatingBubbleChanged(!isFloatingBubbleEnabled) }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    Checkbox(
-                        checked = isFloatingBubbleEnabled,
-                        onCheckedChange = onFloatingBubbleChanged,
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = OrangePrimary,
-                            uncheckedColor = SilverDark,
-                            checkmarkColor = Color.White
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onFloatingBubbleChanged(!isFloatingBubbleEnabled) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Checkbox(
+                            checked = isFloatingBubbleEnabled,
+                            onCheckedChange = onFloatingBubbleChanged,
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = OrangePrimary,
+                                uncheckedColor = SilverDark,
+                                checkmarkColor = Color.White
+                            )
                         )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (isEn) "Display floating screen button" else "Exibir botão flutuante na tela",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = SilverBright
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isServiceActive && isFloatingBubbleEnabled) Color(0xFF16A34A).copy(alpha = 0.25f) else Color(0xFFEA580C).copy(alpha = 0.25f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (isServiceActive && isFloatingBubbleEnabled) (if (isEn) "ACTIVE" else "ATIVO") else (if (isEn) "NOT ENABLED" else "REQUER ATIVAÇÃO"),
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isServiceActive && isFloatingBubbleEnabled) Color(0xFF4ADE80) else Color(0xFFFB923C)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (isEn) "Bubble overlay to select and read screen contents in any app." else "Ícone sobre outros apps para ler seleção imediata da tela.",
+                                fontSize = 11.sp,
+                                color = SilverMuted
+                            )
+                        }
+                    }
+                }
+
+                if (!isServiceActive) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            try {
+                                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Abra Configurações > Acessibilidade > Aplicativos Instalados > ReadToMe", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(38.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (isEn) "Display floating screen button" else "Exibir botão flutuante na tela",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = SilverBright
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isEn) "Bubble overlay to select and read screen contents." else "Ícone sobre outros apps para ler seleção imediata da tela.",
-                            fontSize = 11.sp,
-                            color = SilverMuted
+                            text = if (isEn) "Enable in Accessibility Settings" else "Ativar em Aplicativos Instalados (Acessibilidade)",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                 }
