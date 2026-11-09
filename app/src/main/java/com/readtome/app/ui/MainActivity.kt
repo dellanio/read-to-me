@@ -140,27 +140,78 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 // =========================================================================
-// PALETA DE CORES V2.0: PRETO + CARVÃO + PRATA + LARANJA QUEIMADO
+// DESIGN 02 APROVADO: TOKENS DE GRADIENTES, CORES E MATERIAIS METÁLICOS
 // =========================================================================
-private val BgDark = Color(0xFF090A0E)
-private val SurfaceCard = Color(0xFF13141B)
-private val SurfaceCardElevated = Color(0xFF181A24)
-private val SurfaceInput = Color(0xFF0E0F16)
-private val BorderSubtle = Color(0xFF232532)
+private val BgDark = Color(0xFF07080B)
+private val SurfaceCard = Color(0xFF10121A)
+private val SurfaceCardElevated = Color(0xFF151722)
+private val SurfaceInput = Color(0xFF0A0C12)
+private val BorderSubtle = Color(0xFF222635)
 private val BorderActive = Color(0xFFEA580C)
+private val BorderMetallic = Color(0xFF262A38)
+private val BorderMetallicLight = Color(0xFF383E54)
+
 private val OrangePrimary = Color(0xFFF97316)
 private val OrangeDeep = Color(0xFFEA580C)
 private val SilverBright = Color(0xFFF8FAFC)
 private val SilverMuted = Color(0xFF94A3B8)
 private val SilverDark = Color(0xFF64748B)
 
-private val OrangeGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFFEA580C), Color(0xFFF97316))
+// Gradiente da Tab Ativa (Laranja Luminoso do Mockup)
+private val TabActiveGradient = Brush.verticalGradient(
+    listOf(
+        Color(0xFFFF9E58), // Highlight claro no topo
+        Color(0xFFF97316), // Laranja vívido
+        Color(0xFFD84E00)  // Base queimada
+    )
 )
 
-private val PlayButtonGradient = Brush.verticalGradient(
-    colors = listOf(Color(0xFFFB923C), Color(0xFFEA580C), Color(0xFFC2410C))
+// Gradiente Metálico Prateado 3D (Botão Escolher Arquivo)
+private val MetallicButtonGradient = Brush.verticalGradient(
+    listOf(
+        Color(0xFFFFFFFF), // Brilho superior
+        Color(0xFFE5E8F0), // Prata claro
+        Color(0xFFC7CBD6), // Prata metálico
+        Color(0xFF8B8F9D), // Sombra escovada
+        Color(0xFF9EA3B2)  // Reflexo na base
+    )
 )
+
+// Gradiente do Grande Botão Circular de Play (Com Efeito Radial 3D)
+private val PlayButtonGradient = Brush.radialGradient(
+    colors = listOf(
+        Color(0xFFFFA94D), // Núcleo brilhante
+        Color(0xFFFA7718), // Laranja intermediário
+        Color(0xFFE24F00), // Laranja queimado
+        Color(0xFF8C2E00)  // Borda profunda
+    )
+)
+
+// Gradiente para Cards Translúcidos Metálicos
+private val CardGradient = Brush.verticalGradient(
+    listOf(
+        Color(0xFF151722),
+        Color(0xFF0E1017)
+    )
+)
+
+// Gradiente para Botões Secundários Metálicos (Loop, Timer, Ajustes)
+private val SecondaryButtonGradient = Brush.verticalGradient(
+    listOf(
+        Color(0xFF242735),
+        Color(0xFF141620)
+    )
+)
+
+// Gradiente para os Badges de Formato (TXT, PDF, DOCX, MD)
+private val BadgeGradient = Brush.verticalGradient(
+    listOf(
+        Color(0xFF1B1E2B),
+        Color(0xFF12141D)
+    )
+)
+
+private val OrangeGradient = TabActiveGradient
 
 // Extensao para desenhar borda tracejada estilo mockup
 fun Modifier.dashedBorder(
@@ -438,50 +489,61 @@ fun ReadToMeStudioScreen() {
         }
 
         // =========================================================================
-        // 2. BARRA DE NAVEGAÇÃO HORIZONTAL EM ABAS (DESIGN 02 APROVADO)
-        // =========================================================================
-        Row(
+        // 2. BARRA DE NAVEGAÇÃO HORIZONTAL EM CONTAINER UNIFICADO (DESIGN 02)
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF10121A))
+                .border(1.dp, Color(0xFF222635), RoundedCornerShape(16.dp))
+                .padding(3.dp)
         ) {
-            StudioTab.values().forEach { tab ->
-                val isSelected = currentTab == tab
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(42.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) OrangeGradient else Brush.linearGradient(listOf(SurfaceCard, SurfaceCard)))
-                        .border(
-                            1.dp,
-                            if (isSelected) BorderActive else BorderSubtle,
-                            RoundedCornerShape(14.dp)
-                        )
-                        .clickable { currentTab = tab },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                StudioTab.values().forEach { tab ->
+                    val isSelected = currentTab == tab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(38.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .then(
+                                if (isSelected) {
+                                    Modifier
+                                        .shadow(10.dp, RoundedCornerShape(12.dp), spotColor = Color(0xFFDF5F00))
+                                        .background(TabActiveGradient)
+                                        .border(1.dp, Color(0xFFFFB37E), RoundedCornerShape(12.dp))
+                                } else {
+                                    Modifier.background(Color.Transparent)
+                                }
+                            )
+                            .clickable { currentTab = tab },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = tab.icon,
-                            contentDescription = null,
-                            tint = if (isSelected) Color.White else SilverMuted,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = if (isEn) tab.labelEn else tab.labelPt,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color.White else SilverMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = null,
+                                tint = if (isSelected) Color.White else Color(0xFF8E93A6),
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = if (isEn) tab.labelEn else tab.labelPt,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else Color(0xFF8E93A6),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
@@ -724,7 +786,7 @@ private fun LeituraTabContent(
                 .fillMaxWidth()
                 .dashedBorder(1.2.dp, Color(0xFF383E54), 18.dp, 8.dp, 6.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color(0xFF11131B))
+                .background(CardGradient)
                 .padding(vertical = 18.dp, horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -741,8 +803,8 @@ private fun LeituraTabContent(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF181B26))
-                            .border(1.dp, Color(0xFF2A2F40), RoundedCornerShape(10.dp)),
+                            .background(SecondaryButtonGradient)
+                            .border(1.dp, BorderMetallic, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -801,8 +863,8 @@ private fun LeituraTabContent(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF161924))
-                            .border(1.dp, Color(0xFF262C3C), RoundedCornerShape(8.dp))
+                            .background(BadgeGradient)
+                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -815,8 +877,8 @@ private fun LeituraTabContent(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF161924))
-                            .border(1.dp, Color(0xFF262C3C), RoundedCornerShape(8.dp))
+                            .background(BadgeGradient)
+                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -829,8 +891,8 @@ private fun LeituraTabContent(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF161924))
-                            .border(1.dp, Color(0xFF262C3C), RoundedCornerShape(8.dp))
+                            .background(BadgeGradient)
+                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -843,8 +905,8 @@ private fun LeituraTabContent(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF161924))
-                            .border(1.dp, Color(0xFF262C3C), RoundedCornerShape(8.dp))
+                            .background(BadgeGradient)
+                            .border(1.dp, BorderMetallic, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -856,22 +918,15 @@ private fun LeituraTabContent(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Botão Metálico Prateado Chanfrado: [ 📁 Escolher arquivo  ⌄ ]
+                // Botão Metálico Prateado 3D Chanfrado: [ 📁 Escolher arquivo  ⌄ ]
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.78f)
-                        .height(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color(0xFFE5E7EE),
-                                    Color(0xFFCAD0DD),
-                                    Color(0xFF9096A8)
-                                )
-                            )
-                        )
-                        .border(1.dp, Color(0x99FFFFFF), RoundedCornerShape(12.dp))
+                        .height(44.dp)
+                        .shadow(10.dp, RoundedCornerShape(14.dp), spotColor = Color(0x77000000))
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MetallicButtonGradient)
+                        .border(1.dp, Color(0xAAFFFFFF), RoundedCornerShape(14.dp))
                         .clickable { onChooseFileClick() }
                         .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.Center
@@ -911,8 +966,8 @@ private fun LeituraTabContent(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF11131B)),
-            border = BorderStroke(1.dp, Color(0xFF222634))
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF10121A)),
+            border = BorderStroke(1.dp, BorderMetallic)
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1057,8 +1112,8 @@ private fun LeituraTabContent(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF11131B)),
-            border = BorderStroke(1.dp, Color(0xFF222634))
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF10121A)),
+            border = BorderStroke(1.dp, BorderMetallic)
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 // Título
@@ -1315,8 +1370,8 @@ private fun LeituraTabContent(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF161822))
-                        .border(1.dp, Color(0xFF262A38), CircleShape)
+                        .background(SecondaryButtonGradient)
+                        .border(1.dp, BorderMetallic, CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Replay,
@@ -1339,21 +1394,14 @@ private fun LeituraTabContent(
                     )
                 }
 
-                // GRANDE BOTÃO CIRCULAR DE PLAY LARANJA QUEIMADO COM BRILHO RADIAL
+                // GRANDE BOTÃO CIRCULAR DE PLAY LARANJA QUEIMADO 3D (DESIGN 02)
                 Box(
                     modifier = Modifier
-                        .size(66.dp)
-                        .shadow(16.dp, CircleShape, spotColor = Color(0xFFEA580C))
+                        .size(68.dp)
+                        .shadow(22.dp, CircleShape, spotColor = Color(0xFFFA7718))
                         .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    Color(0xFFFF852D),
-                                    Color(0xFFEA580C),
-                                    Color(0xFFC2410C)
-                                )
-                            )
-                        )
+                        .background(PlayButtonGradient)
+                        .border(1.5.dp, Color(0xFFFFB074).copy(alpha = 0.7f), CircleShape)
                         .clickable { onPlayPauseClick() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -1384,8 +1432,8 @@ private fun LeituraTabContent(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF161822))
-                        .border(1.dp, Color(0xFF262A38), CircleShape)
+                        .background(SecondaryButtonGradient)
+                        .border(1.dp, BorderMetallic, CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Timer,
