@@ -1,5 +1,11 @@
 package com.readtome.app.ui
 
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.LinearEasing
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -139,6 +145,9 @@ import com.readtome.app.data.web.WebArticleExtractor
 import com.readtome.app.service.ReadToMeAccessibilityService
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+// Fonte Moderna Plus Jakarta Sans
+val AppFont = FontFamily(Font(R.font.plus_jakarta_sans))
 
 // =========================================================================
 // DESIGN 02 APROVADO: TOKENS DE GRADIENTES, CORES E MATERIAIS METÁLICOS
@@ -454,8 +463,7 @@ fun ReadToMeStudioScreen() {
                 .statusBarsPadding()
         ) {
                 // =========================================================================
-        // 1. CABEÇALHO COM IDENTIDADE VISUAL OFICIAL: LOGO + HERO 3D + AJUSTES
-        // Proporções ampliadas conforme mockup oficial
+        // 1. CABEÇALHO EXECUTIVO: NOVA LOGOMARCA + MICROFONE 3D COM ANEL NEON + AJUSTES
         // =========================================================================
         Box(
             modifier = Modifier
@@ -467,45 +475,28 @@ fun ReadToMeStudioScreen() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Lado Esquerdo: Logotipo ReadToMe Amplo + Slogan
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 6.dp)
+                // Lado Esquerdo: Nova Logomarca ReadToMe Estúdio Inteligente de Voz
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f).padding(end = 6.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_readtome_logo),
-                        contentDescription = "ReadToMe",
+                        contentDescription = "ReadToMe Logo",
                         modifier = Modifier
-                            .height(52.dp)
-                            .width(170.dp),
+                            .height(58.dp)
+                            .fillMaxWidth(0.95f),
                         contentScale = ContentScale.Fit,
                         alignment = Alignment.CenterStart
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = if (isEn) "Read, listen and follow your texts" else "Leia, ouça e acompanhe seus textos",
-                        fontSize = 10.5.sp,
-                        color = Color(0xFF8E93A6),
-                        maxLines = 1
-                    )
                 }
 
-                // Lado Direito: Novo Ícone 3D Oficial (Microfone Titânio + Ondas Laranja) + Botão de Ajustes
+                // Lado Direito: Microfone 3D Vivo com Efeito Neon Circulando + Botão de Ajustes
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_readtome_hero),
-                        contentDescription = "ReadToMe 3D Studio Icon",
-                        modifier = Modifier
-                            .size(60.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0x88000000))
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(1.2.dp, Color(0xFF454E66), RoundedCornerShape(16.dp)),
-                        contentScale = ContentScale.Crop
-                    )
+                    Animated3dMicHero(isPlaying = isPlaying)
 
                     // Botão Metálico Circular de Ajustes
                     IconButton(
@@ -756,6 +747,198 @@ fun ReadToMeStudioScreen() {
 // ABA 1: LEITURA (PLAYER, EDITOR E IMPORTAÇÃO)
 // =========================================================================
 // =========================================================================
+// =========================================================================
+// 1. HERO 3D ANIMADO: MICROFONE FLUTUANTE COM ANEL DE NEON CIRCULANDO
+// =========================================================================
+@Composable
+fun Animated3dMicHero(
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "mic_fx")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.98f,
+        targetValue = if (isPlaying) 1.08f else 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (isPlaying) 600 else 1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_scale"
+    )
+
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "float_y"
+    )
+
+    val tiltAngle by infiniteTransition.animateFloat(
+        initialValue = -4f,
+        targetValue = 4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "tilt_angle"
+    )
+
+    val auraAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = if (isPlaying) 0.90f else 0.55f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (isPlaying) 500 else 1600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "aura_alpha"
+    )
+
+    val orbitRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (isPlaying) 2400 else 4200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "orbit_rot"
+    )
+
+    Box(
+        modifier = modifier.size(68.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Halo de brilho volumétrico neon laranja/âmbar
+        Canvas(modifier = Modifier.size(76.dp)) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0x88F97316),
+                        Color(0x33EA580C),
+                        Color.Transparent
+                    )
+                ),
+                radius = size.width / 2f,
+                alpha = auraAlpha
+            )
+        }
+
+        // Anel orbital de neon circulando o microfone
+        Canvas(
+            modifier = Modifier
+                .size(64.dp)
+                .rotate(orbitRotation)
+        ) {
+            drawArc(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color(0x22FFA94D),
+                        Color(0x88FF9E58),
+                        Color(0xFFFF7700),
+                        Color.Transparent
+                    )
+                ),
+                startAngle = 0f,
+                sweepAngle = 260f,
+                useCenter = false,
+                style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+            )
+        }
+
+        // Container do Microfone 3D com física de flutuação e tilt
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer(
+                    scaleX = pulseScale,
+                    scaleY = pulseScale,
+                    translationY = floatY * 4f,
+                    rotationZ = tiltAngle,
+                    shadowElevation = 12f
+                )
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF0F1117))
+                .border(
+                    width = 1.2.dp,
+                    brush = Brush.verticalGradient(
+                        listOf(Color(0xFF6B7594), Color(0xFF242735))
+                    ),
+                    shape = RoundedCornerShape(14.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_readtome_3d_mic),
+                contentDescription = "ReadToMe 3D Studio Mic",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+// =========================================================================
+// 2. EQUALIZADOR DINÂMICO DE FORMA DE ONDA SONORA EM TEMPO REAL
+// =========================================================================
+@Composable
+fun AnimatedAudioWaveform(
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "wave_bars")
+
+    val barHeights = List(28) { index ->
+        infiniteTransition.animateFloat(
+            initialValue = 0.2f,
+            targetValue = if (isPlaying) (0.35f + ((index * 7) % 9) * 0.08f) else 0.2f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = if (isPlaying) (260 + (index % 5) * 70) else 1500,
+                    easing = FastOutSlowInEasing
+                ),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "wave_bar_$index"
+        )
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(34.dp)
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        barHeights.forEachIndexed { index, animHeight ->
+            val isActiveProgress = index < 11
+            val barColor = if (isPlaying && isActiveProgress) {
+                OrangePrimary
+            } else if (isPlaying) {
+                Color(0xFF555E75)
+            } else if (isActiveProgress) {
+                Color(0xFFEA580C)
+            } else {
+                Color(0xFF222634)
+            }
+
+            val heightFactor = if (isPlaying) animHeight.value else (0.22f + (index % 4) * 0.08f)
+
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height((32 * heightFactor).coerceAtLeast(4f).dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(barColor)
+            )
+        }
+    }
+}
+
 // SWITCH METÁLICO 3D COM ACABAMENTO SKEUOMÓRFICO IDÊNTICO AO PROTÓTIPO
 // =========================================================================
 @Composable
@@ -1075,12 +1258,12 @@ private fun LeituraTabContent(
 
         // =========================================================================
         // SEÇÃO 2: "ADICIONAR TEXTO" (MOLDURA TRACEJADA COM GRADIENTE METÁLICO)
-        // Mesma altura (182dp) da Seção 1, com moldura tracejada interna
+        // Altura ampliada (228dp) para garantir visibilidade perfeita do botão Escolher arquivo
         // =========================================================================
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(182.dp),
+                .height(228.dp),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             border = BorderStroke(1.dp, CardBorderBrush)
@@ -1137,16 +1320,18 @@ private fun LeituraTabContent(
 
                         Text(
                             text = if (isEn) "Add text" else "Adicionar texto",
-                            fontSize = 14.5.sp,
+                            fontSize = 16.sp,
+                            fontFamily = AppFont,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
 
                         Text(
                             text = if (isEn) "Paste text, drag a file here or choose a file." else "Cole um texto, arraste um arquivo aqui ou escolha um arquivo.",
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
+                            fontFamily = AppFont,
                             color = Color(0xFF8E93A6),
                             textAlign = TextAlign.Center
                         )
@@ -1184,8 +1369,8 @@ private fun LeituraTabContent(
                         // Botão Metálico 3D Chanfrado: [ 📁 Escolher arquivo  ⌄ ]
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.78f)
-                                .height(38.dp)
+                                .fillMaxWidth(0.82f)
+                                .height(40.dp)
                                 .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = Color(0x66000000))
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MetallicButtonGradient)
@@ -1504,18 +1689,13 @@ private fun LeituraTabContent(
                 .padding(top = 2.dp, bottom = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Ondas Sonoras Dinâmicas durante reprodução (Asset ic_readtome_waves)
-            if (isPlaying) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_readtome_waves),
-                    contentDescription = "Ondas Sonoras",
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .height(36.dp)
-                        .padding(bottom = 6.dp),
-                    contentScale = ContentScale.Fit
-                )
-            }
+            // Ondas Sonoras Dinâmicas e Vivas (Visualizador de Áudio Animado)
+            AnimatedAudioWaveform(
+                isPlaying = isPlaying,
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .padding(bottom = 6.dp)
+            )
 
             // Linha de Controles: Loop, Anterior, PLAY LARANJA GIGANTE, Próximo, Timer
             Row(
