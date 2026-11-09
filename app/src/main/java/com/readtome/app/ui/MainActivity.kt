@@ -775,8 +775,8 @@ private fun LeituraTabContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // =========================================================================
         // CARD 1: "ADICIONAR TEXTO" (MOLDURA COM BORDA TRACEJADA METÁLICA DO MOCKUP)
@@ -784,10 +784,10 @@ private fun LeituraTabContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .dashedBorder(1.2.dp, Color(0xFF383E54), 18.dp, 8.dp, 6.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(CardGradient)
-                .padding(vertical = 18.dp, horizontal = 16.dp),
+                .dashedBorder(1.2.dp, Color(0xFF4A5068), 18.dp, 8.dp, 5.dp)
+                .padding(vertical = 12.dp, horizontal = 14.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -852,7 +852,7 @@ private fun LeituraTabContent(
                     lineHeight = 15.sp
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Linha com 4 Badges de Formatos: TXT, PDF, DOCX, MD (Cores fiéis ao mockup)
                 Row(
@@ -916,7 +916,7 @@ private fun LeituraTabContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Botão Metálico Prateado 3D Chanfrado: [ 📁 Escolher arquivo  ⌄ ]
                 Box(
@@ -1444,7 +1444,7 @@ private fun LeituraTabContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Barra de Progresso Fina: 00:00 ━━━━━━●───────── 05:32
             Row(
@@ -1497,7 +1497,7 @@ private fun LeituraTabContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Card Inferior do Documento Atual: [ 📄 ] Plano Concilia – Proposta v2 ...
             Card(
