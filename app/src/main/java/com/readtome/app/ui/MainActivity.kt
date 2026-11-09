@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -311,6 +312,7 @@ fun ReadToMeStudioScreen() {
         modifier = Modifier
             .fillMaxSize()
             .background(BgDark)
+            .statusBarsPadding()
     ) {
         // =========================================================================
         // 1. CABEÇALHO COMPACTO PREMIUM (LOGO + AUDIO WAVE DISCRETA + AJUSTES)
@@ -323,40 +325,14 @@ fun ReadToMeStudioScreen() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Ícone / Logo ReadToMe
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(SurfaceCardElevated)
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MenuBook,
-                        contentDescription = null,
-                        tint = OrangePrimary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Read",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = SilverBright
-                        )
-                        Text(
-                            text = "ToMe",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = OrangePrimary
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_readtome_logo),
+                        contentDescription = "ReadToMe",
+                        modifier = Modifier.height(26.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isEn) "Read, listen and follow your texts" else "Leia, ouça e acompanhe seus textos",
                         fontSize = 11.sp,
