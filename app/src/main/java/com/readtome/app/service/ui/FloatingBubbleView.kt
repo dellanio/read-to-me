@@ -89,10 +89,10 @@ class FloatingBubbleView(
             elevation = dpToPx(12).toFloat()
         }
 
-        // Ícone em modo ocioso (Novo Logo 3D Studio ReadToMe)
+        // Ícone em modo ocioso (Novo Ícone 3D Studio ReadToMe Laranja e Metálico)
         idleIcon = ImageView(context).apply {
-            setImageResource(R.drawable.ic_readtome_logo)
-            val pad = dpToPx(7)
+            setImageResource(R.drawable.ic_readtome_bubble)
+            val pad = dpToPx(3)
             setPadding(pad, pad, pad, pad)
             scaleType = ImageView.ScaleType.FIT_CENTER
         }

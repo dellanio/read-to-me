@@ -302,7 +302,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         val app = application as? ReadToMeApp
-        if (app?.preferences?.isFloatingBubbleEnabled == true && isAccessibilityServiceEnabled(this)) {
+        if (app != null && isAccessibilityServiceEnabled(this)) {
+            app.preferences.isFloatingBubbleEnabled = true
             ReadToMeAccessibilityService.instance?.updateBubbleVisibility()
         }
     }
@@ -524,7 +525,23 @@ fun ReadToMeStudioScreen() {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Animated3dMicHero(isPlaying = isPlaying)
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable {
+                                prefs.isFloatingBubbleEnabled = true
+                                isFloatingBubbleEnabled = true
+                                if (isAccessibilityServiceEnabled(context)) {
+                                    ReadToMeAccessibilityService.instance?.updateBubbleVisibility()
+                                    Toast.makeText(context, if (isEn) "Floating screen assistant activated!" else "Assistente flutuante de tela ativado!", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, if (isEn) "Enable ReadToMe in Accessibility Settings" else "Ative o ReadToMe em Aplicativos Instalados nas configurações de Acessibilidade.", Toast.LENGTH_LONG).show()
+                                    try { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) } catch (e: Exception) {}
+                                }
+                            }
+                    ) {
+                        Animated3dMicHero(isPlaying = isPlaying)
+                    }
 
                     // Botão Metálico Circular de Ajustes
                     IconButton(
